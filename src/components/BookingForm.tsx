@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Calendar as CalendarIcon, Clock, User, Mail, Phone } from 'lucide-react';
-import { format } from "date-fns";
+import React, { useState, useMemo } from 'react';
+import { Calendar as CalendarIcon, User, Mail, Phone } from 'lucide-react';
+import { format, getDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -13,19 +13,31 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { showSuccess } from "@/utils/toast";
 
-const timeSlots = [
-  "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
-];
+// Mock danych dostępności (w przyszłości z bazy danych)
+const mockAvailability: Record<number, string[]> = {
+  1: ["09:00", "10:00", "11:00", "12:00"], // Poniedziałek
+  2: ["14:00", "15:00", "16:00"],           // Wtorek
+  3: ["10:00", "11:00", "18:00", "19:00"], // Środa
+  4: ["09:00", "10:00", "20:00", "21:00"], // Czwartek
+  5: ["12:00", "13:00", "14:00", "15:00"], // Piątek
+  6: ["10:00", "11:00"],                   // Sobota
+  0: []                                    // Niedziela
+};
 
 const BookingForm = () => {
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
 
+  // Filtrowanie dostępnych godzin na podstawie wybranej daty
+  const availableHours = useMemo(() => {
+    if (!date) return [];
+    const dayOfWeek = getDay(date); // 0 = Niedziela, 1 = Poniedziałek...
+    return mockAvailability[dayOfWeek] || [];
+  }, [date]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Symulacja wysyłania
     setTimeout(() => {
       setLoading(false);
       showSuccess("Rezerwacja została wysłana! Skontaktujemy się z Tobą wkrótce.");
@@ -38,7 +50,7 @@ const BookingForm = () => {
         <div className="max-w-4xl mx-auto bg-card border border-border rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold mb-2">Zarezerwuj termin</h2>
-            <p className="text-muted-foreground">Wypełnij formularz, a my potwierdzimy Twoją sesję.</p>
+            <p className="text-muted-foreground">Wybierz datę, aby zobaczyć dostępne godziny.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -86,17 +98,20 @@ const BookingForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="time">Godzina</Label>
-                <Select required>
+                <Label htmlFor="time">Dostępne godziny</Label>
+                <Select required disabled={!date || availableHours.length === 0}>
                   <SelectTrigger className="rounded-xl h-12">
-                    <SelectValue placeholder="Wybierz godzinę" />
+                    <SelectValue placeholder={!date ? "Najpierw wybierz datę" : availableHours.length === 0 ? "Brak wolnych terminów" : "Wybierz godzinę"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeSlots.map((slot) => (
+                    {availableHours.map((slot) => (
                       <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {date && availableHours.length === 0 && (
+                  <p className="text-xs text-destructive mt-1">Przepraszamy, ten dzień jest już w pełni zarezerwowany.</p>
+                )}
               </div>
             </div>
 
@@ -128,7 +143,7 @@ const BookingForm = () => {
               <Button 
                 type="submit" 
                 className="w-full h-14 rounded-xl text-lg font-bold mt-4" 
-                disabled={loading}
+                disabled={loading || !date || availableHours.length === 0}
               >
                 {loading ? "Wysyłanie..." : "Potwierdź rezerwację"}
               </Button>
