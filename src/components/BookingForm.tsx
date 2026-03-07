@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar as CalendarIcon, User, Mail, Phone } from 'lucide-react';
 import { format, getDay } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -11,33 +11,51 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
+import { supabase } from '@/lib/supabase';
 
-// Mock danych dostępności (w przyszłości z bazy danych)
-const mockAvailability: Record<number, string[]> = {
-  1: ["09:00", "10:00", "11:00", "12:00"], // Poniedziałek
-  2: ["14:00", "15:00", "16:00"],           // Wtorek
-  3: ["10:00", "11:00", "18:00", "19:00"], // Środa
-  4: ["09:00", "10:00", "20:00", "21:00"], // Czwartek
-  5: ["12:00", "13:00", "14:00", "15:00"], // Piątek
-  6: ["10:00", "11:00"],                   // Sobota
-  0: []                                    // Niedziela
+const dayMap: Record<number, string> = {
+  1: "Poniedziałek",
+  2: "Wtorek",
+  3: "Środa",
+  4: "Czwartek",
+  5: "Piątek",
+  6: "Sobota",
+  0: "Niedziela"
 };
 
 const BookingForm = () => {
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
+  const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
 
-  // Filtrowanie dostępnych godzin na podstawie wybranej daty
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      const { data, error } = await supabase.from('availability').select('*');
+      if (error) {
+        console.error("Błąd pobierania dostępności:", error);
+      } else if (data) {
+        const formatted = data.reduce((acc: any, curr: any) => {
+          acc[curr.day_name] = curr.hours;
+          return acc;
+        }, {});
+        setDbAvailability(formatted);
+      }
+    };
+    fetchAvailability();
+  }, []);
+
   const availableHours = useMemo(() => {
     if (!date) return [];
-    const dayOfWeek = getDay(date); // 0 = Niedziela, 1 = Poniedziałek...
-    return mockAvailability[dayOfWeek] || [];
-  }, [date]);
+    const dayName = dayMap[getDay(date)];
+    return dbAvailability[dayName] || [];
+  }, [date, dbAvailability]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Tutaj można dodać zapis rezerwacji do tabeli 'bookings'
     setTimeout(() => {
       setLoading(false);
       showSuccess("Rezerwacja została wysłana! Skontaktujemy się z Tobą wkrótce.");
@@ -109,9 +127,6 @@ const BookingForm = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {date && availableHours.length === 0 && (
-                  <p className="text-xs text-destructive mt-1">Przepraszamy, ten dzień jest już w pełni zarezerwowany.</p>
-                )}
               </div>
             </div>
 

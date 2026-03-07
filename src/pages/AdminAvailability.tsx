@@ -1,18 +1,42 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { showSuccess } from '@/utils/toast';
-import { Save, Calendar as CalendarIcon } from 'lucide-react';
+import { showSuccess, showError } from '@/utils/toast';
+import { Save, Calendar as CalendarIcon, LogOut } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 const hours = Array.from({ length: 24 }, (_, i) => `${String(i + 1).padStart(2, '0')}:00`);
 
 const AdminAvailability = () => {
-  // Stan przechowujący dostępność: { "Poniedziałek": ["09:00", "10:00"], ... }
   const [availability, setAvailability] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchAvailability();
+  }, []);
+
+  const fetchAvailability = async () => {
+    const { data, error } = await supabase
+      .from('availability')
+      .select('*');
+    
+    if (error) {
+      showError("Nie udało się pobrać danych");
+    } else if (data) {
+      const formatted = data.reduce((acc: any, curr: any) => {
+        acc[curr.day_name] = curr.hours;
+        return acc;
+      }, {});
+      setAvailability(formatted);
+    }
+    setLoading(false);
+  };
 
   const toggleHour = (day: string, hour: string) => {
     setAvailability(prev => {
@@ -25,9 +49,28 @@ const AdminAvailability = () => {
     });
   };
 
-  const handleSave = () => {
-    console.log("Zapisano dostępność:", availability);
-    showSuccess("Harmonogram został zapisany pomyślnie!");
+  const handleSave = async () => {
+    setLoading(true);
+    const updates = Object.entries(availability).map(([day, hrs]) => ({
+      day_name: day,
+      hours: hrs
+    }));
+
+    const { error } = await supabase
+      .from('availability')
+      .upsert(updates, { onConflict: 'day_name' });
+
+    if (error) {
+      showError("Błąd zapisu: " + error.message);
+    } else {
+      showSuccess("Harmonogram został zapisany!");
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
   };
 
   return (
@@ -39,11 +82,16 @@ const AdminAvailability = () => {
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <CalendarIcon className="text-primary" /> Panel Realizatora
             </h1>
-            <p className="text-muted-foreground">Zaznacz godziny, w których jesteś dostępny w studiu.</p>
+            <p className="text-muted-foreground">Zaznacz godziny, w których jesteś dostępny.</p>
           </div>
-          <Button onClick={handleSave} className="rounded-full px-8 h-12 gap-2">
-            <Save size={18} /> Zapisz zmiany
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleLogout} className="rounded-full px-6 h-12 gap-2">
+              <LogOut size={18} /> Wyloguj
+            </Button>
+            <Button onClick={handleSave} className="rounded-full px-8 h-12 gap-2" disabled={loading}>
+              <Save size={18} /> {loading ? "Zapisywanie..." : "Zapisz zmiany"}
+            </Button>
+          </div>
         </div>
 
         <div className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-xl">
