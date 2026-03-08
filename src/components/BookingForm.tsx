@@ -84,62 +84,102 @@ const BookingForm = () => {
     }
   };
 
-  const getAvailableHours = (date: Date, hoursCount: number) => {
+  // Funkcja pomocnicza do sprawdzania dostępności pojedynczej godziny
+  const isHourAvailable = (checkDate: Date, checkHour: string) => {
+    const checkDayName = dayMap[getDay(checkDate)];
+    const dayAvailability = dbAvailability[checkDayName];
+    return dayAvailability && dayAvailability.includes(checkHour);
+  };
+
+  // Funkcja pomocnicza do sprawdzania kolizji z istniejącymi rezerwacjami
+  const hasCollision = (potentialBookingStart: Date, potentialBookingEnd: Date) => {
+    return existingBookings.some(existingBooking => {
+      const existingBookingDate = parseISO(existingBooking.booking_date);
+      const existingBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(existingBookingDate, parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
+      const existingBookingEnd = addHours(existingBookingStart, existingBooking.number_of_hours);
+
+      return (
+        (isBefore(potentialBookingStart, existingBookingEnd) && isAfter(potentialBookingEnd, existingBookingStart)) ||
+        (potentialBookingStart.getTime() === existingBookingStart.getTime() && potentialBookingEnd.getTime() === existingBookingEnd.getTime())
+      );
+    });
+  };
+
+  const getAvailableHours = (date: Date) => {
     const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-    console.log(`[BookingForm] getAvailableHours for date: ${format(date, 'yyyy-MM-dd')}, hoursCount: ${hoursCount}`);
+    console.log(`[BookingForm] getAvailableHours for date: ${format(date, 'yyyy-MM-dd')}`);
 
     return allPossibleHours.filter(startHour => {
       const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-      const bookingEnd = addHours(bookingStart, hoursCount);
+      const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy tylko 1 godzinę na początek
 
       console.log(`[BookingForm] Checking startHour: ${startHour}, bookingStart: ${bookingStart}, bookingEnd: ${bookingEnd}`);
 
-      // 1. Sprawdź dostępność w grafiku administratora dla każdej godziny w ramach rezerwacji
-      for (let i = 0; i < hoursCount; i++) {
-        const currentCheckTime = addHours(bookingStart, i);
-        const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
-        const currentCheckDayName = dayMap[getDay(currentCheckTime)];
-        
-        const dayAvailability = dbAvailability[currentCheckDayName];
-
-        console.log(`[BookingForm]   Sub-check for hour ${i}: currentCheckTime: ${currentCheckTime}, day: ${currentCheckDayName}, hour: ${currentCheckHourFormatted}`);
-        console.log(`[BookingForm]   Admin availability for ${currentCheckDayName}:`, dayAvailability);
-
-        if (!dayAvailability || !dayAvailability.includes(currentCheckHourFormatted)) {
-          console.log(`[BookingForm]   REJECTED: ${startHour} because ${currentCheckDayName} ${currentCheckHourFormatted} is not available in admin schedule.`);
-          return false; // Godzina nie jest dostępna w grafiku administratora
-        }
+      // Sprawdź dostępność w grafiku administratora dla tej godziny
+      if (!isHourAvailable(bookingStart, startHour)) {
+        console.log(`[BookingForm]   REJECTED: ${startHour} because it's not available in admin schedule.`);
+        return false;
       }
 
-      // 2. Sprawdź kolizje z istniejącymi rezerwacjami
-      const relevantBookings = existingBookings.filter(existingBooking => {
-        const existingBookingDate = parseISO(existingBooking.booking_date);
-        const existingBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(existingBookingDate, parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
-        const existingBookingEnd = addHours(existingBookingStart, existingBooking.number_of_hours);
-
-        const collision = (
-          (isBefore(bookingStart, existingBookingEnd) && isAfter(bookingEnd, existingBookingStart)) ||
-          (bookingStart.getTime() === existingBookingStart.getTime() && bookingEnd.getTime() === existingBookingEnd.getTime())
-        );
-        if (collision) {
-          console.log(`[BookingForm]   Collision detected for ${startHour} with existing booking: ${existingBooking.booking_date} ${existingBooking.booking_hour} for ${existingBooking.number_of_hours}h`);
-        }
-        return collision;
-      });
-
-      if (relevantBookings.length > 0) {
+      // Sprawdź kolizje z istniejącymi rezerwacjami dla tej godziny
+      if (hasCollision(bookingStart, bookingEnd)) {
         console.log(`[BookingForm] REJECTED: ${startHour} due to collision with existing booking.`);
-        return false; // Kolizja z istniejącą rezerwacją
+        return false;
       }
       
       console.log(`[BookingForm] ACCEPTED: ${startHour}`);
-      return true; // Godzina jest dostępna
+      return true;
     });
+  };
+
+  const getMaxBookableHours = (date: Date, startHour: string) => {
+    if (!date || !startHour) return 0;
+
+    let maxHours = 0;
+    for (let i = 1; i <= 5; i++) { // Maksymalnie 5 godzin, można dostosować
+      const potentialBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
+      const potentialBookingEnd = addHours(potentialBookingStart, i);
+
+      let possible = true;
+      for (let j = 0; j < i; j++) {
+        const currentCheckTime = addHours(potentialBookingStart, j);
+        const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
+        if (!isHourAvailable(currentCheckTime, currentCheckHourFormatted)) {
+          possible = false;
+          break;
+        }
+        // Sprawdź kolizje dla każdej godziny w ramach rezerwacji
+        const currentSegmentEnd = addHours(currentCheckTime, 1);
+        if (hasCollision(currentCheckTime, currentSegmentEnd)) {
+          possible = false;
+          break;
+        }
+      }
+
+      if (possible) {
+        maxHours = i;
+      } else {
+        break; // Jeśli nie można zarezerwować i godzin, to tym bardziej i+1
+      }
+    }
+    console.log(`[BookingForm] Max bookable hours for ${format(date, 'yyyy-MM-dd')} at ${startHour}: ${maxHours}`);
+    return maxHours;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedHour(null); // Resetuj godzinę po zmianie daty
+    setNumberOfHours('1'); // Resetuj liczbę godzin
+  };
+
+  const handleHourSelect = (hour: string) => {
+    setSelectedHour(hour);
+    setNumberOfHours('1'); // Resetuj liczbę godzin po zmianie godziny
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,8 +231,13 @@ const BookingForm = () => {
 
   const availableHoursForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
-    return getAvailableHours(selectedDate, parseInt(numberOfHours));
-  }, [selectedDate, dbAvailability, existingBookings, numberOfHours]);
+    return getAvailableHours(selectedDate); // Nie przekazujemy już hoursCount tutaj
+  }, [selectedDate, dbAvailability, existingBookings]);
+
+  const maxBookableHours = useMemo(() => {
+    if (!selectedDate || !selectedHour) return 0;
+    return getMaxBookableHours(selectedDate, selectedHour);
+  }, [selectedDate, selectedHour, dbAvailability, existingBookings]);
 
   return (
     <section id="booking" className="py-24 bg-secondary/10">
@@ -216,23 +261,21 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    const hasHours = getAvailableHours(date, parseInt(numberOfHours)).length > 0;
+                    // Sprawdzamy, czy dla danej daty istnieją jakiekolwiek dostępne godziny (przynajmniej 1h)
+                    const hasAnyAvailableHours = getAvailableHours(date).length > 0;
                     
                     return (
                       <button
                         key={date.toString()}
                         type="button"
-                        disabled={!hasHours}
-                        onClick={() => {
-                          setSelectedDate(date);
-                          setSelectedHour(null);
-                        }}
+                        disabled={!hasAnyAvailableHours}
+                        onClick={() => handleDateSelect(date)}
                         className={cn(
                           "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
                           isSelected 
                             ? "border-gray-accent bg-gray-accent/5 scale-105" 
                             : "border-transparent bg-secondary/30 hover:bg-secondary/50",
-                          !hasHours && "opacity-30 cursor-not-allowed grayscale"
+                          !hasAnyAvailableHours && "opacity-30 cursor-not-allowed grayscale"
                         )}
                       >
                         <span className="text-xs font-bold uppercase text-muted-foreground mb-1">
@@ -258,7 +301,7 @@ const BookingForm = () => {
                           <button
                             key={hour}
                             type="button"
-                            onClick={() => setSelectedHour(hour)}
+                            onClick={() => handleHourSelect(hour)}
                             className={cn(
                               "py-3 px-2 rounded-xl text-sm font-bold transition-all border-2",
                               selectedHour === hour
@@ -271,7 +314,7 @@ const BookingForm = () => {
                         ))
                       ) : (
                         <p className="col-span-full text-center py-12 text-muted-foreground italic">
-                          Brak dostępnych godzin w tym dniu dla wybranej liczby godzin.
+                          Brak dostępnych godzin w tym dniu.
                         </p>
                       )}
                     </div>
@@ -346,19 +389,16 @@ const BookingForm = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="number_of_hours">Ilość godzin</Label>
-                    <Select value={numberOfHours} onValueChange={(value) => {
-                      setNumberOfHours(value);
-                      setSelectedHour(null); // Reset selected hour when number of hours changes
-                    }}>
+                    <Select value={numberOfHours} onValueChange={(value) => setNumberOfHours(value)} disabled={!selectedDate || !selectedHour}>
                       <SelectTrigger className="rounded-xl h-12">
                         <SelectValue placeholder="Wybierz ilość godzin" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1">1 godzina</SelectItem>
-                        <SelectItem value="2">2 godziny</SelectItem>
-                        <SelectItem value="3">3 godziny</SelectItem>
-                        <SelectItem value="4">4 godziny</SelectItem>
-                        <SelectItem value="5">5 godzin</SelectItem>
+                        {Array.from({ length: maxBookableHours }, (_, i) => i + 1).map(hourNum => (
+                          <SelectItem key={hourNum} value={String(hourNum)}>
+                            {hourNum} godzina{hourNum > 1 ? 'y' : ''}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -381,7 +421,7 @@ const BookingForm = () => {
                     <Button 
                       type="submit" 
                       className="w-full h-14 rounded-2xl text-lg font-bold" 
-                      disabled={loading || !selectedDate || !selectedHour}
+                      disabled={loading || !selectedDate || !selectedHour || parseInt(numberOfHours) === 0}
                     >
                       {loading ? (
                         <span className="flex items-center gap-2">
