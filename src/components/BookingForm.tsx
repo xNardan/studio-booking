@@ -87,7 +87,7 @@ const BookingForm = () => {
       format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(addDays(selectedDate, 1), 'yyyy-MM-dd')
     );
 
-    const allPossibleHours = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`); // 08:00 - 22:00
+    const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`); // 00:00 - 23:00
 
     return allPossibleHours.filter(hour => {
       const numHours = parseInt(numberOfHours);
