@@ -5,6 +5,11 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { MapPin, Mail, Instagram, Phone, Mic, Headphones, DollarSign, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Index = () => {
   return (
@@ -13,6 +18,220 @@ const Index = () => {
       <main>
         <Hero />
         <Services />
+
+        {/* About Section */}
+        <section id="about" className="py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">O nas</h2>
+              <p className="text-muted-foreground text-lg">
+                Flow Studio to nowoczesne studio nagrań, stworzone z pasji do muzyki i dźwięku. Oferujemy profesjonalne usługi nagraniowe, miks i mastering, produkcję muzyczną oraz realizację podcastów. Naszym celem jest zapewnienie artystom idealnych warunków do tworzenia i rozwijania ich twórczości.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              <div className="rounded-3xl overflow-hidden shadow-xl">
+                <img src="https://via.placeholder.com/600x400" alt="Studio Interior" className="w-full h-auto object-cover" />
+              </div>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <Users className="text-primary w-8 h-8 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Doświadczony zespół</h3>
+                    <p className="text-muted-foreground">Nasi realizatorzy to pasjonaci z wieloletnim doświadczeniem w branży muzycznej.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <Headphones className="text-primary w-8 h-8 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Najwyższa jakość dźwięku</h3>
+                    <p className="text-muted-foreground">Dbamy o każdy detal, aby Twoje nagrania brzmiały perfekcyjnie.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <Mic className="text-primary w-8 h-8 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Kreatywna atmosfera</h3>
+                    <p className="text-muted-foreground">Stwarzamy inspirujące środowisko, które sprzyja twórczości.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Equipment Section */}
+        <section id="equipment" className="py-20 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Nasz sprzęt</h2>
+              <p className="text-muted-foreground text-lg">
+                Pracujemy na sprawdzonym i nowoczesnym sprzęcie, aby zapewnić najwyższą jakość Twoich produkcji.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <Card className="border-none shadow-lg rounded-3xl">
+                <CardHeader>
+                  <CardTitle className="text-xl">Mikrofony</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    <li>Neumann U87 Ai</li>
+                    <li>AKG C414 XLII</li>
+                    <li>Shure SM7B</li>
+                    <li>Lewitt LCT 440 PURE</li>
+                  </ul>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-lg rounded-3xl">
+                <CardHeader>
+                  <CardTitle className="text-xl">Interfejsy Audio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    <li>Universal Audio Apollo Twin X</li>
+                    <li>Focusrite Scarlett 18i20</li>
+                  </ul>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-lg rounded-3xl">
+                <CardHeader>
+                  <CardTitle className="text-xl">Oprogramowanie</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    <li>Ableton Live Suite</li>
+                    <li>Logic Pro X</li>
+                    <li>FabFilter Total Bundle</li>
+                    <li>Waves Platinum</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Cennik</h2>
+              <p className="text-muted-foreground text-lg">
+                Przejrzyste ceny, bez ukrytych kosztów. Skontaktuj się z nami, aby uzyskać indywidualną wycenę.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <Card className="border-none shadow-lg rounded-3xl flex flex-col">
+                <CardHeader className="text-center">
+                  <DollarSign className="mx-auto w-12 h-12 text-primary mb-4" />
+                  <CardTitle className="text-2xl font-bold">Nagrywanie</CardTitle>
+                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-primary">150 zł</span>/h</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
+                    <li>Profesjonalna kabina lektorska</li>
+                    <li>Wysokiej klasy mikrofony</li>
+                    <li>Realizator dźwięku</li>
+                    <li>Podstawowy montaż</li>
+                  </ul>
+                  <Button className="w-full rounded-full font-bold">Zarezerwuj</Button>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-lg rounded-3xl flex flex-col">
+                <CardHeader className="text-center">
+                  <Headphones className="mx-auto w-12 h-12 text-primary mb-4" />
+                  <CardTitle className="text-2xl font-bold">Miks & Mastering</CardTitle>
+                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-primary">400 zł</span>/utwór</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
+                    <li>Profesjonalny miks utworu</li>
+                    <li>Mastering do standardów branżowych</li>
+                    <li>Korekcja wokalu</li>
+                    <li>Dwie rundy poprawek</li>
+                  </ul>
+                  <Button className="w-full rounded-full font-bold">Zarezerwuj</Button>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-lg rounded-3xl flex flex-col">
+                <CardHeader className="text-center">
+                  <Mic className="mx-auto w-12 h-12 text-primary mb-4" />
+                  <CardTitle className="text-2xl font-bold">Produkcja Muzyczna</CardTitle>
+                  <p className="text-muted-foreground"><span className="text-3xl font-extrabold text-primary">Wycena</span> indywidualna</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
+                    <li>Tworzenie aranżacji od podstaw</li>
+                    <li>Kompozycja i orkiestracja</li>
+                    <li>Wsparcie artystyczne</li>
+                    <li>Pełna realizacja projektu</li>
+                  </ul>
+                  <Button className="w-full rounded-full font-bold">Skontaktuj się</Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section id="contact" className="py-20 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Skontaktuj się z nami</h2>
+              <p className="text-muted-foreground text-lg">
+                Masz pytania? Chcesz omówić swój projekt? Napisz do nas lub zadzwoń!
+              </p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <Card className="border-none shadow-lg rounded-3xl p-6">
+                  <CardTitle className="mb-4 text-xl">Napisz do nas</CardTitle>
+                  <form className="space-y-4">
+                    <div>
+                      <Label htmlFor="contact-name">Imię</Label>
+                      <Input id="contact-name" placeholder="Twoje imię" className="rounded-xl h-12" />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-email">Email</Label>
+                      <Input id="contact-email" type="email" placeholder="twoj@email.com" className="rounded-xl h-12" />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact-message">Wiadomość</Label>
+                      <Textarea id="contact-message" placeholder="Twoja wiadomość..." rows={5} className="rounded-xl" />
+                    </div>
+                    <Button type="submit" className="w-full rounded-full font-bold h-12">Wyślij wiadomość</Button>
+                  </form>
+                </Card>
+                <Card className="border-none shadow-lg rounded-3xl p-6">
+                  <CardTitle className="mb-4 text-xl">Znajdź nas</CardTitle>
+                  <div className="flex items-center gap-4 mb-4">
+                    <Mail className="text-primary w-6 h-6" />
+                    <a href="mailto:kontakt@flowstudio.pl" className="text-lg hover:text-primary transition-colors">kontakt@flowstudio.pl</a>
+                  </div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <Phone className="text-primary w-6 h-6" />
+                    <a href="tel:+48123456789" className="text-lg hover:text-primary transition-colors">+48 123 456 789</a>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Instagram className="text-primary w-6 h-6" />
+                    <a href="https://instagram.com/flowstudio" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-primary transition-colors">@flowstudio</a>
+                  </div>
+                </Card>
+              </div>
+              <div className="rounded-3xl overflow-hidden shadow-xl h-[400px] lg:h-auto">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2560.9100400000003!2d19.94497991571749!3d50.06143007942309!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47165b0000000001%3A0x123456789abcdef0!2sRynek%20G%C5%82%C3%B3wny%2C%20Krak%C3%B3w!5e0!3m2!1spl!2spl!4v1678901234567!5m2!1spl!2spl"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={false}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Lokalizacja Flow Studio"
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
       <footer className="py-12 border-t border-border bg-secondary/20">
         <div className="container mx-auto px-4 text-center">
