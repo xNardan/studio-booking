@@ -9,7 +9,7 @@ import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft,
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { DatePicker } from '@/components/DatePicker';
-import { format, startOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks, getDay, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
@@ -30,17 +30,17 @@ const AdminAvailability = () => {
   }, [selectedDate]);
 
   const getWeekStartDate = (date: Date) => {
-    return format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    return startOfWeek(date, { weekStartsOn: 1 });
   };
 
   const fetchAvailability = async (date: Date) => {
     setLoading(true);
-    const weekStartDate = getWeekStartDate(date);
+    const weekStartDateFormatted = format(getWeekStartDate(date), 'yyyy-MM-dd');
     try {
       const { data, error } = await supabase
         .from('weekly_availability')
         .select('*')
-        .eq('week_start_date', weekStartDate);
+        .eq('week_start_date', weekStartDateFormatted);
       
       if (error) throw error;
 
@@ -133,13 +133,13 @@ const AdminAvailability = () => {
       return;
     }
     setSaving(true);
-    const weekStartDate = getWeekStartDate(selectedDate);
+    const weekStartDateFormatted = format(getWeekStartDate(selectedDate), 'yyyy-MM-dd');
     try {
       const { error } = await supabase
         .from('weekly_availability')
         .upsert(
           {
-            week_start_date: weekStartDate,
+            week_start_date: weekStartDateFormatted,
             availability_data: availability
           },
           { onConflict: 'week_start_date' }
@@ -174,9 +174,16 @@ const AdminAvailability = () => {
   };
 
   const getWeekRange = (date: Date) => {
-    const start = startOfWeek(date, { weekStartsOn: 1 });
-    const end = addWeeks(start, 1);
-    return `${format(start, 'dd.MM.yyyy', { locale: pl })} - ${format(subWeeks(end, 0), 'dd.MM.yyyy', { locale: pl })}`;
+    const start = getWeekStartDate(date);
+    const end = addDays(start, 6);
+    return `${format(start, 'dd.MM.yyyy', { locale: pl })} - ${format(end, 'dd.MM.yyyy', { locale: pl })}`;
+  };
+
+  const getDayDate = (dayIndex: number) => {
+    if (!selectedDate) return '';
+    const weekStart = getWeekStartDate(selectedDate);
+    const dayDate = addDays(weekStart, dayIndex);
+    return format(dayDate, 'dd.MM', { locale: pl });
   };
 
   if (loading) {
@@ -237,9 +244,10 @@ const AdminAvailability = () => {
               <thead>
                 <tr className="bg-secondary/50">
                   <th className="p-4 text-left border-b border-border font-bold">Godzina</th>
-                  {days.map(day => (
+                  {days.map((day, index) => (
                     <th key={day} className="p-4 text-center border-b border-border font-bold min-w-[120px]">
-                      {day}
+                      <div>{day}</div>
+                      <div className="text-sm font-normal text-muted-foreground">{getDayDate(index)}</div>
                     </th>
                   ))}
                 </tr>
