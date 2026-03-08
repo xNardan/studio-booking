@@ -53,9 +53,10 @@ const BookingForm = () => {
   }, []);
 
   const fetchAvailability = async () => {
+    console.log("[BookingForm] Fetching availability...");
     const { data, error } = await supabase.from('availability').select('*');
     if (error) {
-      console.error("Błąd pobierania dostępności:", error);
+      console.error("[BookingForm] Błąd pobierania dostępności:", error);
     } else {
       const formatted: Record<string, string[]> = {};
       days.forEach(day => {
@@ -68,24 +69,30 @@ const BookingForm = () => {
         });
       }
       setDbAvailability(formatted);
+      console.log("[BookingForm] Fetched availability:", formatted);
     }
   };
 
   const fetchExistingBookings = async () => {
+    console.log("[BookingForm] Fetching existing bookings...");
     const { data, error } = await supabase.from('bookings').select('*');
     if (error) {
-      console.error("Błąd pobierania istniejących rezerwacji:", error);
+      console.error("[BookingForm] Błąd pobierania istniejących rezerwacji:", error);
     } else if (data) {
       setExistingBookings(data);
+      console.log("[BookingForm] Fetched existing bookings:", data);
     }
   };
 
   const getAvailableHours = (date: Date, hoursCount: number) => {
     const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+    console.log(`[BookingForm] getAvailableHours for date: ${format(date, 'yyyy-MM-dd')}, hoursCount: ${hoursCount}`);
 
     return allPossibleHours.filter(startHour => {
       const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
       const bookingEnd = addHours(bookingStart, hoursCount);
+
+      console.log(`[BookingForm] Checking startHour: ${startHour}, bookingStart: ${bookingStart}, bookingEnd: ${bookingEnd}`);
 
       // 1. Sprawdź dostępność w grafiku administratora dla każdej godziny w ramach rezerwacji
       for (let i = 0; i < hoursCount; i++) {
@@ -95,7 +102,11 @@ const BookingForm = () => {
         
         const dayAvailability = dbAvailability[currentCheckDayName];
 
+        console.log(`[BookingForm]   Sub-check for hour ${i}: currentCheckTime: ${currentCheckTime}, day: ${currentCheckDayName}, hour: ${currentCheckHourFormatted}`);
+        console.log(`[BookingForm]   Admin availability for ${currentCheckDayName}:`, dayAvailability);
+
         if (!dayAvailability || !dayAvailability.includes(currentCheckHourFormatted)) {
+          console.log(`[BookingForm]   REJECTED: ${startHour} because ${currentCheckDayName} ${currentCheckHourFormatted} is not available in admin schedule.`);
           return false; // Godzina nie jest dostępna w grafiku administratora
         }
       }
@@ -106,18 +117,22 @@ const BookingForm = () => {
         const existingBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(existingBookingDate, parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
         const existingBookingEnd = addHours(existingBookingStart, existingBooking.number_of_hours);
 
-        // Sprawdzamy, czy istniejąca rezerwacja nakłada się na naszą potencjalną rezerwację
-        // Używamy isBefore i isAfter, aby sprawdzić, czy interwały się przecinają
-        return (
+        const collision = (
           (isBefore(bookingStart, existingBookingEnd) && isAfter(bookingEnd, existingBookingStart)) ||
           (bookingStart.getTime() === existingBookingStart.getTime() && bookingEnd.getTime() === existingBookingEnd.getTime())
         );
+        if (collision) {
+          console.log(`[BookingForm]   Collision detected for ${startHour} with existing booking: ${existingBooking.booking_date} ${existingBooking.booking_hour} for ${existingBooking.number_of_hours}h`);
+        }
+        return collision;
       });
 
       if (relevantBookings.length > 0) {
+        console.log(`[BookingForm] REJECTED: ${startHour} due to collision with existing booking.`);
         return false; // Kolizja z istniejącą rezerwacją
       }
       
+      console.log(`[BookingForm] ACCEPTED: ${startHour}`);
       return true; // Godzina jest dostępna
     });
   };
