@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { showSuccess, showError } from '@/utils/toast'; // Import toastów
+import { Link } from 'react-router-dom'; // Import Link
 
 const Index = () => {
   const [contactForm, setContactForm] = useState({
@@ -276,8 +277,9 @@ const Index = () => {
             </a>
           </div>
         </div>
-        <div className="container mx-auto px-4 text-center mt-8 pt-8 border-t border-border">
+        <div className="container mx-auto px-4 text-center mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-2">
           <p className="text-muted-foreground text-sm">© 2026 Flow Studio. Wszelkie prawa zastrzeżone.</p>
+          <Link to="/privacy-policy" className="text-muted-foreground text-sm hover:text-gray-accent transition-colors">Polityka Prywatności</Link>
         </div>
       </footer>
     </div>

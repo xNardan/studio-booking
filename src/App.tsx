@@ -10,13 +10,14 @@ import AdminBookings from "./pages/AdminBookings";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
-import { ThemeProvider } from "./components/ThemeProvider"; // Import ThemeProvider
+import { ThemeProvider } from "./components/ThemeProvider";
+import PrivacyPolicy from "./components/PrivacyPolicy"; // Import PrivacyPolicy
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme" attribute="class"> {/* Dodano attribute="class" */}
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme" attribute="class">
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/rezerwacja" element={<BookingPage />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} /> {/* Nowa trasa */}
             <Route 
               path="/admin" 
               element={
