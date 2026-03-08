@@ -26,7 +26,7 @@ const Index = () => {
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">O nas</h2>
               <p className="text-muted-foreground text-lg">
-                Flow Studio to nowoczesne studio nagrań, stworzone z pasji do muzyki i dźwięku. Oferujemy profesjonalne usługi nagraniowe, miks i mastering, produkcję muzyczną oraz realizację podcastów. Naszym celem jest zapewnienie artystom idealnych warunków do tworzenia i rozwijania ich twórczości.
+                Flow Studio to nowoczesne studio nagrań, stworzone z pasji do muzyki i dźwięku. Oferujemy profesjonalne usługi nagraniowe, miks i mastering oraz produkcję muzyczną. Naszym celem jest zapewnienie artystom idealnych warunków do tworzenia i rozwijania ich twórczości.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
