@@ -31,7 +31,7 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="rounded-3xl overflow-hidden shadow-xl">
-                <img src="/pasted-image-2026-03-08T14-07-42-852Z.png" alt="Studio Interior" className="w-full h-auto object-cover" />
+                <img src="/pasted-image-2026-03-08T14-08-52-013Z.png" alt="Studio Interior" className="w-full h-auto object-cover" />
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
