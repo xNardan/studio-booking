@@ -38,32 +38,32 @@
   }
 
   .dark {
-    --background: 220 10% 10%; /* Bardzo ciemne tło */
-    --foreground: 210 20% 98%; /* Jasny tekst */
+    --background: 0 0% 5%; /* Bardzo ciemne tło */
+    --foreground: 0 0% 98%; /* Jasny tekst */
 
-    --card: 220 10% 15%; /* Ciemniejsze karty */
-    --card-foreground: 210 20% 98%;
+    --card: 0 0% 8%; /* Ciemniejsze karty */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 10% 15%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 45 100% 50%; /* Żółty akcent */
-    --primary-foreground: 220 10% 10%; /* Ciemny tekst na akcencie */
+    --primary-foreground: 0 0% 98%; /* Biały tekst na akcencie */
 
-    --secondary: 220 10% 20%; /* Drugorzędne tło */
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 0 0% 12%; /* Drugorzędne tło */
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 10% 20%;
-    --muted-foreground: 210 10% 60%; /* Ciemniejszy muted-foreground */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%; /* Ciemniejszy muted-foreground */
 
-    --accent: 220 10% 20%;
-    --accent-foreground: 210 20% 98%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 10% 25%; /* Ciemniejsza ramka */
-    --input: 220 10% 20%;
+    --border: 0 0% 15%; /* Ciemniejsza ramka */
+    --input: 0 0% 12%;
     --ring: 45 100% 50%; /* Żółty ring */
 
     --yellow: 45 100% 50%; /* Nowy kolor żółty */
