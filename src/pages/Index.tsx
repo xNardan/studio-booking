@@ -31,7 +31,7 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
               <div className="rounded-3xl overflow-hidden shadow-xl">
-                <img src="https://via.placeholder.com/600x400" alt="Studio Interior" className="w-full h-auto object-cover" />
+                <img src="https://via.placeholder.com/1200x800" alt="Studio Interior" className="w-full h-auto object-cover" /> {/* Zmieniono obraz na większy placeholder */}
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
