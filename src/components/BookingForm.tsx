@@ -192,7 +192,7 @@ const BookingForm = () => {
                           </button>
                         ))
                       ) : (
-                        <p className="col-span-full text-center py-8 text-muted-foreground italic">
+                        <p className="col-span-full text-center py-12 text-muted-foreground italic">
                           Brak dostępnych godzin w tym dniu.
                         </p>
                       )}
