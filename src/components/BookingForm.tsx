@@ -54,11 +54,19 @@ const BookingForm = () => {
     const { data, error } = await supabase.from('availability').select('*');
     if (error) {
       console.error("Błąd pobierania dostępności:", error);
-    } else if (data) {
-      const formatted = data.reduce((acc: any, curr: any) => {
-        acc[curr.day_name] = curr.hours;
-        return acc;
-      }, {});
+    } else {
+      const formatted: Record<string, string[]> = {};
+      // Initialize all days with empty arrays
+      days.forEach(day => {
+        formatted[day] = [];
+      });
+      
+      // Fill with data from DB
+      if (data) {
+        data.forEach((curr: any) => {
+          formatted[curr.day_name] = curr.hours;
+        });
+      }
       setDbAvailability(formatted);
     }
   };
@@ -85,9 +93,10 @@ const BookingForm = () => {
         const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
         const currentCheckDayName = dayMap[getDay(currentCheckTime)];
         
-        const dayAvailability = dbAvailability[currentCheckDayName] || [];
+        const dayAvailability = dbAvailability[currentCheckDayName]; // No || [] here, as dbAvailability is now always initialized
 
-        if (!dayAvailability.includes(currentCheckHourFormatted)) {
+        if (!dayAvailability || !dayAvailability.includes(currentCheckHourFormatted)) {
+          // console.log(`[DEBUG] Hour ${startHour} rejected because ${currentCheckDayName} ${currentCheckHourFormatted} is not available in admin schedule.`);
           return false; // Godzina nie jest dostępna w grafiku administratora
         }
       }
@@ -100,15 +109,6 @@ const BookingForm = () => {
 
         // Sprawdzamy, czy istniejąca rezerwacja nakłada się na naszą potencjalną rezerwację
         // Używamy isBefore i isAfter, aby sprawdzić, czy interwały się przecinają
-        // Dodatkowo sprawdzamy, czy daty są takie same, aby uniknąć kolizji z rezerwacjami z innych dni
-        const isSameDay = format(bookingStart, 'yyyy-MM-dd') === format(existingBookingStart, 'yyyy-MM-dd');
-        const isNextDay = format(addDays(bookingStart, 1), 'yyyy-MM-dd') === format(existingBookingStart, 'yyyy-MM-dd');
-
-
-        if (!isSameDay && !isNextDay) {
-          return false; // Rezerwacja jest z innego dnia, nie koliduje
-        }
-
         return (
           (isBefore(bookingStart, existingBookingEnd) && isAfter(bookingEnd, existingBookingStart)) ||
           (bookingStart.getTime() === existingBookingStart.getTime() && bookingEnd.getTime() === existingBookingEnd.getTime())
@@ -116,6 +116,7 @@ const BookingForm = () => {
       });
 
       if (relevantBookings.length > 0) {
+        // console.log(`[DEBUG] Hour ${startHour} rejected due to collision with existing booking.`);
         return false; // Kolizja z istniejącą rezerwacją
       }
       
