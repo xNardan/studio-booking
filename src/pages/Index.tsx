@@ -157,10 +157,6 @@ const Index = () => {
                     <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-primary transition-colors">flowstudiobp@gmail.com</a>
                   </div>
                   <div className="flex items-center gap-4 mb-4">
-                    <Phone className="text-primary w-6 h-6" />
-                    <a href="tel:+48123456789" className="text-lg hover:text-primary transition-colors">+48 123 456 789</a>
-                  </div>
-                  <div className="flex items-center gap-4 mb-4">
                     <Instagram className="text-primary w-6 h-6" />
                     <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-primary transition-colors">@flowstudio.bp</a>
                   </div>
