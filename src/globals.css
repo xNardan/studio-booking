@@ -32,6 +32,8 @@
     --input: 270 10% 90%;
     --ring: 270 80% 60%;
 
+    --yellow: 45 100% 50%; /* Nowy kolor żółty */
+
     --radius: 0.5rem;
   }
 
@@ -48,21 +50,23 @@
     --primary: 270 80% 60%; /* Fioletowy akcent */
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 270 10% 10%; /* Drugorzędne tło */
+    --secondary: 0 0% 10%; /* Drugorzędne tło */
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 270 10% 10%;
+    --muted: 0 0% 10%;
     --muted-foreground: 270 10% 60%;
 
-    --accent: 270 10% 10%;
+    --accent: 0 0% 10%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 270 10% 20%; /* Ciemniejsza ramka */
-    --input: 270 10% 15%;
+    --border: 0 0% 20%; /* Ciemniejsza ramka */
+    --input: 0 0% 10%;
     --ring: 270 80% 60%;
+
+    --yellow: 45 100% 50%; /* Nowy kolor żółty */
   }
 }
 

@@ -35,21 +35,21 @@ const Index = () => {
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <Users className="text-primary w-8 h-8 flex-shrink-0" />
+                  <Users className="text-yellow w-8 h-8 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold mb-1">Doświadczony zespół</h3>
                     <p className="text-muted-foreground">Nasi realizatorzy to pasjonaci z wieloletnim doświadczeniem w branży muzycznej.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Headphones className="text-primary w-8 h-8 flex-shrink-0" />
+                  <Headphones className="text-yellow w-8 h-8 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold mb-1">Najwyższa jakość dźwięku</h3>
                     <p className="text-muted-foreground">Dbamy o każdy detal, aby Twoje nagrania brzmiały perfekcyjnie.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Mic className="text-primary w-8 h-8 flex-shrink-0" />
+                  <Mic className="text-yellow w-8 h-8 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold mb-1">Kreatywna atmosfera</h3>
                     <p className="text-muted-foreground">Stwarzamy inspirujące środowisko, które sprzyja twórczości.</p>
@@ -123,9 +123,9 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <Card className="border-none shadow-lg rounded-3xl flex flex-col">
                 <CardHeader className="text-center">
-                  <DollarSign className="mx-auto w-12 h-12 text-primary mb-4" />
+                  <DollarSign className="mx-auto w-12 h-12 text-yellow mb-4" />
                   <CardTitle className="text-2xl font-bold">Nagrywanie</CardTitle>
-                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-primary">150 zł</span>/h</p>
+                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-yellow">150 zł</span>/h</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
@@ -139,9 +139,9 @@ const Index = () => {
               </Card>
               <Card className="border-none shadow-lg rounded-3xl flex flex-col">
                 <CardHeader className="text-center">
-                  <Headphones className="mx-auto w-12 h-12 text-primary mb-4" />
+                  <Headphones className="mx-auto w-12 h-12 text-yellow mb-4" />
                   <CardTitle className="text-2xl font-bold">Miks & Mastering</CardTitle>
-                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-primary">400 zł</span>/utwór</p>
+                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-yellow">400 zł</span>/utwór</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
@@ -155,9 +155,9 @@ const Index = () => {
               </Card>
               <Card className="border-none shadow-lg rounded-3xl flex flex-col">
                 <CardHeader className="text-center">
-                  <Mic className="mx-auto w-12 h-12 text-primary mb-4" />
+                  <Mic className="mx-auto w-12 h-12 text-yellow mb-4" />
                   <CardTitle className="text-2xl font-bold">Produkcja Muzyczna</CardTitle>
-                  <p className="text-muted-foreground"><span className="text-3xl font-extrabold text-primary">Wycena</span> indywidualna</p>
+                  <p className="text-muted-foreground"><span className="text-3xl font-extrabold text-yellow">Wycena</span> indywidualna</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
@@ -205,16 +205,16 @@ const Index = () => {
                 <Card className="border-none shadow-lg rounded-3xl p-6">
                   <CardTitle className="mb-4 text-xl">Znajdź nas</CardTitle>
                   <div className="flex items-center gap-4 mb-4">
-                    <Mail className="text-primary w-6 h-6" />
-                    <a href="mailto:kontakt@flowstudio.pl" className="text-lg hover:text-primary transition-colors">kontakt@flowstudio.pl</a>
+                    <Mail className="text-yellow w-6 h-6" />
+                    <a href="mailto:kontakt@flowstudio.pl" className="text-lg hover:text-yellow transition-colors">kontakt@flowstudio.pl</a>
                   </div>
                   <div className="flex items-center gap-4 mb-4">
-                    <Phone className="text-primary w-6 h-6" />
-                    <a href="tel:+48123456789" className="text-lg hover:text-primary transition-colors">+48 123 456 789</a>
+                    <Phone className="text-yellow w-6 h-6" />
+                    <a href="tel:+48123456789" className="text-lg hover:text-yellow transition-colors">+48 123 456 789</a>
                   </div>
                   <div className="flex items-center gap-4">
-                    <Instagram className="text-primary w-6 h-6" />
-                    <a href="https://instagram.com/flowstudio" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-primary transition-colors">@flowstudio</a>
+                    <Instagram className="text-yellow w-6 h-6" />
+                    <a href="https://instagram.com/flowstudio" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-yellow transition-colors">@flowstudio</a>
                   </div>
                 </Card>
               </div>
@@ -238,9 +238,9 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground mb-4">© 2024 Flow Studio. Wszystkie prawa zastrzeżone.</p>
           <div className="flex justify-center gap-6 text-sm font-medium">
-            <a href="#" className="hover:text-primary transition-colors">Instagram</a>
-            <a href="#" className="hover:text-primary transition-colors">Facebook</a>
-            <a href="#" className="hover:text-primary transition-colors">YouTube</a>
+            <a href="#" className="hover:text-yellow transition-colors">Instagram</a>
+            <a href="#" className="hover:text-yellow transition-colors">Facebook</a>
+            <a href="#" className="hover:text-yellow transition-colors">YouTube</a>
           </div>
         </div>
         <MadeWithDyad />

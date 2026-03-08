@@ -52,6 +52,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        yellow: "hsl(var(--yellow))", // Dodano nowy kolor żółty
         // Usunięto sekcję sidebar, aby uprościć i uniknąć potencjalnych konfliktów
       },
       borderRadius: {
