@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccess, showError } from '@/utils/toast';
-import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { DatePicker } from '@/components/DatePicker'; // Import DatePicker
