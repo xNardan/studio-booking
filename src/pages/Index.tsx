@@ -69,7 +69,7 @@ const Index = () => {
                 Pracujemy na sprawdzonym i nowoczesnym sprzęcie, aby zapewnić najwyższą jakość Twoich produkcji.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card className="border-none shadow-lg rounded-3xl">
                 <CardHeader>
                   <CardTitle className="text-xl">Mikrofony</CardTitle>
@@ -86,7 +86,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>behringer studio L</li>
+                    <li>Behringer Studio L</li>
                   </ul>
                 </CardContent>
               </Card>
@@ -96,7 +96,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>krk rokit 5</li>
+                    <li>KRK Rokit 5</li>
                     <li>Beyerdynamic DT 770 Pro 80Ohm</li>
                     <li>Superlux HD-660 Pro 150 Ohm</li>
                   </ul>
@@ -108,7 +108,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>FL studio 2025</li>
+                    <li>FL Studio 2025</li>
                     <li>Reaper</li>
                     <li>Waves</li>
                     <li>FabFilter</li>
