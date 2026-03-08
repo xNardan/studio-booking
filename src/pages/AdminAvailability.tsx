@@ -164,11 +164,11 @@ const AdminAvailability = () => {
         <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={goToPreviousWeek} className="rounded-full h-12 px-4">
-              < Poprzedni tydzień
+              <ArrowLeft /> Poprzedni tydzień
             </Button>
             <DatePicker date={selectedDate} setDate={setSelectedDate} />
             <Button variant="outline" onClick={goToNextWeek} className="rounded-full h-12 px-4">
-              Następny tydzień >
+              Następny tydzień <ArrowRight />
             </Button>
           </div>
           {selectedDate && (
