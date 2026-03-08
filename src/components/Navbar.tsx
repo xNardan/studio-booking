@@ -17,8 +17,6 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="/#services" className="hover:text-primary transition-colors">Usługi</a>
             <a href="/#about" className="hover:text-primary transition-colors">O nas</a>
-            <a href="/#equipment" className="hover:text-primary transition-colors">Sprzęt</a>
-            <a href="/#pricing" className="hover:text-primary transition-colors">Cennik</a>
             <a href="/#contact" className="hover:text-primary transition-colors">Kontakt</a>
             <Link to="/rezerwacja" className="bg-primary text-primary-foreground px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-bold">
               Zarezerwuj
