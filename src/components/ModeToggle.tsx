@@ -21,7 +21,7 @@ export function ModeToggle() {
         id="theme-toggle"
         checked={theme === "dark"}
         onCheckedChange={handleToggle}
-        className="data-[state=checked]:bg-yellow data-[state=unchecked]:bg-secondary"
+        className="data-[state=checked]:bg-gray-accent data-[state=unchecked]:bg-secondary"
       />
       <Moon className="h-[1.2rem] w-[1.2rem] text-muted-foreground" />
       <Label htmlFor="theme-toggle" className="sr-only">Toggle theme</Label>

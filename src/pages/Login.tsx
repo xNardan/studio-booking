@@ -36,7 +36,7 @@ const Login = () => {
       <Card className="w-full max-w-md border-none shadow-2xl rounded-[2rem]">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
-            <div className="bg-yellow p-3 rounded-2xl">
+            <div className="bg-gray-accent p-3 rounded-2xl">
               <img src={logo} alt="Flow Studio Logo" className="w-8 h-8 text-primary-foreground" /> {/* Użycie logo */}
             </div>
           </div>

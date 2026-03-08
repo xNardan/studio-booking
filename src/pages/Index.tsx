@@ -60,7 +60,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-yellow/30">
+    <div className="min-h-screen bg-background text-foreground selection:bg-gray-accent/30">
       <Navbar />
       <main>
         <Hero />
@@ -81,21 +81,21 @@ const Index = () => {
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <Users className="text-yellow w-8 h-8 flex-shrink-0" />
+                  <Users className="text-gray-accent w-8 h-8 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold mb-1">Doświadczony zespół</h3>
                     <p className="text-muted-foreground">Nasi realizatorzy to pasjonaci z wieloletnim doświadczeniem w branży muzycznej.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Headphones className="text-yellow w-8 h-8 flex-shrink-0" />
+                  <Headphones className="text-gray-accent w-8 h-8 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold mb-1">Najwyższa jakość dźwięku</h3>
                     <p className="text-muted-foreground">Dbamy o każdy detal, aby Twoje nagrania brzmiały perfekcyjnie.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Mic className="text-yellow w-8 h-8 flex-shrink-0" />
+                  <Mic className="text-gray-accent w-8 h-8 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold mb-1">Kreatywna atmosfera</h3>
                     <p className="text-muted-foreground">Stwarzamy inspirujące środowisko, które sprzyja twórczości.</p>
@@ -224,15 +224,15 @@ const Index = () => {
                 <Card className="border-none shadow-lg rounded-3xl p-6">
                   <CardTitle className="mb-4 text-xl">Znajdź nas</CardTitle>
                   <div className="flex items-center gap-4 mb-4">
-                    <Mail className="text-yellow w-6 h-6" />
-                    <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-yellow transition-colors">flowstudiobp@gmail.com</a>
+                    <Mail className="text-gray-accent w-6 h-6" />
+                    <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-gray-accent transition-colors">flowstudiobp@gmail.com</a>
                   </div>
                   <div className="flex items-center gap-4 mb-4">
-                    <Instagram className="text-yellow w-6 h-6" />
-                    <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-yellow transition-colors">@flowstudio.bp</a>
+                    <Instagram className="text-gray-accent w-6 h-6" />
+                    <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-gray-accent transition-colors">@flowstudio.bp</a>
                   </div>
                   <div className="flex items-center gap-4">
-                    <MapPin className="text-yellow w-6 h-6" />
+                    <MapPin className="text-gray-accent w-6 h-6" />
                     <p className="text-lg">Al. Jana Pawła II 11, Biała Podlaska</p>
                   </div>
                 </Card>

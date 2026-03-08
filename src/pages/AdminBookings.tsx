@@ -62,7 +62,7 @@ const AdminBookings = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-yellow w-12 h-12" />
+        <Loader2 className="animate-spin text-gray-accent w-12 h-12" />
       </div>
     );
   }
@@ -74,7 +74,7 @@ const AdminBookings = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
-              <CalendarIcon className="text-yellow" /> Lista Rezerwacji
+              <CalendarIcon className="text-gray-accent" /> Lista Rezerwacji
             </h1>
             <p className="text-muted-foreground">Zarządzaj nadchodzącymi sesjami w studio.</p>
           </div>
@@ -119,16 +119,16 @@ const AdminBookings = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="capitalize bg-yellow/10 text-yellow px-3 py-1 rounded-full text-xs font-bold">
+                        <span className="capitalize bg-gray-accent/10 text-gray-accent px-3 py-1 rounded-full text-xs font-bold">
                           {booking.service}
                         </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1 text-sm">
-                          <a href={`mailto:${booking.customer_email}`} className="flex items-center gap-2 hover:text-yellow transition-colors">
+                          <a href={`mailto:${booking.customer_email}`} className="flex items-center gap-2 hover:text-gray-accent transition-colors">
                             <Mail size={14} /> {booking.customer_email}
                           </a>
-                          <a href={`tel:${booking.customer_phone}`} className="flex items-center gap-2 hover:text-yellow transition-colors">
+                          <a href={`tel:${booking.customer_phone}`} className="flex items-center gap-2 hover:text-gray-accent transition-colors">
                             <Phone size={14} /> {booking.customer_phone}
                           </a>
                         </div>
