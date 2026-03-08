@@ -52,9 +52,9 @@ const AdminAvailability = () => {
   const handleSave = async () => {
     setLoading(true);
     
-    // Double check session before attempting save
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // Use getUser() for secure server-side verification before saving
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       showError("Sesja wygasła. Zaloguj się ponownie.");
       navigate('/login');
       setLoading(false);
@@ -71,7 +71,6 @@ const AdminAvailability = () => {
       .upsert(updates, { onConflict: 'day_name' });
 
     if (error) {
-      // If RLS is working, unauthorized attempts will fail with code 42501
       if (error.code === '42501') {
         showError("Brak uprawnień do zapisu. Skonfiguruj RLS w Supabase.");
       } else {
