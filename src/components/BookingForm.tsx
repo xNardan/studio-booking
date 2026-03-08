@@ -230,6 +230,20 @@ const BookingForm = () => {
     }));
   }, [selectedDate, dbAvailability, existingBookings]);
 
+  // Nowa funkcja do sprawdzania, czy dany dzień ma jakiekolwiek dostępne godziny
+  const hasAnyTrulyAvailableHoursForDay = (date: Date) => {
+    const dayName = dayMap[getDay(date)];
+    const adminAvailableHours = dbAvailability[dayName] || [];
+    
+    if (adminAvailableHours.length === 0) {
+      return false; // Jeśli administrator nie ustawił żadnych godzin dla tego dnia, to nie ma dostępnych godzin
+    }
+
+    // Sprawdzamy każdą godzinę, którą administrator ustawił jako dostępną
+    return adminAvailableHours.some(hour => isHourTrulyAvailable(date, hour));
+  };
+
+
   const maxBookableHours = useMemo(() => {
     if (!selectedDate || !selectedHour) return 0;
     return getMaxBookableHours(selectedDate, selectedHour);
@@ -270,11 +284,7 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    // Dla każdego dnia, filtrujemy godziny, aby sprawdzić, czy są jakieś dostępne
-                    const dayHasAvailableHours = allPossibleHoursForSelectedDate.some(item => {
-                      const itemDate = setMilliseconds(setSeconds(setMinutes(setHours(selectedDate || new Date(), parseInt(item.hour.split(':')[0])), 0), 0), 0);
-                      return format(itemDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') && item.isAvailable;
-                    });
+                    const dayHasAvailableHours = hasAnyTrulyAvailableHoursForDay(date);
                     
                     return (
                       <button
