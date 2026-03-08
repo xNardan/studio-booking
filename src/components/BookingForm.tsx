@@ -136,7 +136,8 @@ const BookingForm = () => {
     if (!date || !startHour) return 0;
 
     let maxHours = 0;
-    for (let i = 1; i <= 5; i++) { // Maksymalnie 5 godzin, można dostosować
+    // Zwiększono maksymalny zakres sprawdzanych godzin, np. do 12
+    for (let i = 1; i <= 12; i++) { 
       const potentialBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
       const potentialBookingEnd = addHours(potentialBookingStart, i);
 
@@ -231,7 +232,7 @@ const BookingForm = () => {
 
   const availableHoursForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
-    return getAvailableHours(selectedDate); // Nie przekazujemy już hoursCount tutaj
+    return getAvailableHours(selectedDate); 
   }, [selectedDate, dbAvailability, existingBookings]);
 
   const maxBookableHours = useMemo(() => {
