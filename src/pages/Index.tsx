@@ -76,10 +76,7 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>Neumann U87 Ai</li>
-                    <li>AKG C414 XLII</li>
-                    <li>Shure SM7B</li>
-                    <li>Lewitt LCT 440 PURE</li>
+                    <li>t.bone SC 600</li>
                   </ul>
                 </CardContent>
               </Card>
@@ -89,21 +86,33 @@ const Index = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>Universal Audio Apollo Twin X</li>
-                    <li>Focusrite Scarlett 18i20</li>
+                    <li>behringer studio L</li>
                   </ul>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-lg rounded-3xl">
                 <CardHeader>
-                  <CardTitle className="text-xl">Oprogramowanie</CardTitle>
+                  <CardTitle className="text-xl">Monitory Odsłuchowe</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>Ableton Live Suite</li>
-                    <li>Logic Pro X</li>
-                    <li>FabFilter Total Bundle</li>
-                    <li>Waves Platinum</li>
+                    <li>krk rokit 5</li>
+                    <li>Beyerdynamic DT 770 Pro 80Ohm</li>
+                    <li>Superlux HD-660 Pro 150 Ohm</li>
+                  </ul>
+                </CardContent>
+              </Card>
+              <Card className="border-none shadow-lg rounded-3xl">
+                <CardHeader>
+                  <CardTitle className="text-xl">Oprogramowanie (DAW)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    <li>FL studio 2025</li>
+                    <li>Reaper</li>
+                    <li>Waves</li>
+                    <li>FabFilter</li>
+                    <li>Valhalla</li>
                   </ul>
                 </CardContent>
               </Card>
