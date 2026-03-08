@@ -5,9 +5,9 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccess, showError } from '@/utils/toast';
-import { Save, Calendar as CalendarIcon, LogOut, Loader2 } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 const hours = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`); // 08:00 - 22:00
@@ -105,8 +105,13 @@ const AdminAvailability = () => {
             </h1>
             <p className="text-muted-foreground">Zaznacz godziny, w których jesteś dostępny.</p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleLogout} className="rounded-full px-6 h-12 gap-2">
+          <div className="flex flex-wrap gap-3">
+            <Link to="/admin/bookings">
+              <Button variant="outline" className="rounded-full px-6 h-12 gap-2">
+                <ListChecks size={18} /> Rezerwacje
+              </Button>
+            </Link>
+            <Button variant="ghost" onClick={handleLogout} className="rounded-full px-6 h-12 gap-2">
               <LogOut size={18} /> Wyloguj
             </Button>
             <Button onClick={handleSave} className="rounded-full px-8 h-12 gap-2" disabled={saving}>

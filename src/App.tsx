@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AdminAvailability from "./pages/AdminAvailability";
+import AdminBookings from "./pages/AdminBookings";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <AdminAvailability />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/bookings" 
+            element={
+              <ProtectedRoute>
+                <AdminBookings />
               </ProtectedRoute>
             } 
           />
