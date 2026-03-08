@@ -22,6 +22,8 @@ const dayMap: Record<number, string> = {
   6: "Sobota"
 };
 
+const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"]; // Przeniesiono definicję days tutaj
+
 const BookingForm = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
@@ -57,7 +59,7 @@ const BookingForm = () => {
     } else {
       const formatted: Record<string, string[]> = {};
       // Initialize all days with empty arrays
-      days.forEach(day => {
+      days.forEach(day => { // 'days' jest teraz dostępne
         formatted[day] = [];
       });
       
@@ -84,7 +86,7 @@ const BookingForm = () => {
     const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
     return allPossibleHours.filter(startHour => {
-      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
+      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0), 0);
       const bookingEnd = addHours(bookingStart, hoursCount);
 
       // 1. Sprawdź dostępność w grafiku administratora dla każdej godziny w ramach rezerwacji
@@ -93,10 +95,9 @@ const BookingForm = () => {
         const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
         const currentCheckDayName = dayMap[getDay(currentCheckTime)];
         
-        const dayAvailability = dbAvailability[currentCheckDayName]; // No || [] here, as dbAvailability is now always initialized
+        const dayAvailability = dbAvailability[currentCheckDayName];
 
         if (!dayAvailability || !dayAvailability.includes(currentCheckHourFormatted)) {
-          // console.log(`[DEBUG] Hour ${startHour} rejected because ${currentCheckDayName} ${currentCheckHourFormatted} is not available in admin schedule.`);
           return false; // Godzina nie jest dostępna w grafiku administratora
         }
       }
@@ -116,7 +117,6 @@ const BookingForm = () => {
       });
 
       if (relevantBookings.length > 0) {
-        // console.log(`[DEBUG] Hour ${startHour} rejected due to collision with existing booking.`);
         return false; // Kolizja z istniejącą rezerwacją
       }
       
