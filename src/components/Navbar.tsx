@@ -16,6 +16,7 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="/#services" className="hover:text-gray-accent transition-colors">Usługi</a>
+            <a href="/#equipment" className="hover:text-gray-accent transition-colors">Sprzęt</a> {/* Dodany link do sprzętu */}
             <a href="/#about" className="hover:text-gray-accent transition-colors">O nas</a>
             <a href="/#contact" className="hover:text-gray-accent transition-colors">Kontakt</a>
             <Link to="/rezerwacja" className="bg-primary text-primary-foreground px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-bold">
