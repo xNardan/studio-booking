@@ -1,1 +1,1 @@
-# Welcome to your Dyad app
+#CO TAM NIE WIEM CO
