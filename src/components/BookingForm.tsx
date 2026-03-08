@@ -75,11 +75,11 @@ const BookingForm = () => {
   const getAvailableHours = (date: Date, hoursCount: number) => {
     const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
-    return allPossibleHours.filter(hour => {
-      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(hour.split(':')[0])), 0), 0), 0);
+    return allPossibleHours.filter(startHour => {
+      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
       const bookingEnd = addHours(bookingStart, hoursCount);
 
-      // Sprawdź dostępność dla każdej godziny w ramach rezerwacji
+      // 1. Sprawdź dostępność w grafiku administratora dla każdej godziny w ramach rezerwacji
       for (let i = 0; i < hoursCount; i++) {
         const currentCheckTime = addHours(bookingStart, i);
         const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
@@ -92,17 +92,16 @@ const BookingForm = () => {
         }
       }
 
-      // Sprawdź kolizje z istniejącymi rezerwacjami
-      // Pobieramy wszystkie rezerwacje, które mogą kolidować z wybranym zakresem dat
+      // 2. Sprawdź kolizje z istniejącymi rezerwacjami
       const relevantBookings = existingBookings.filter(existingBooking => {
         const existingBookingDate = parseISO(existingBooking.booking_date);
         const existingBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(existingBookingDate, parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
         const existingBookingEnd = addHours(existingBookingStart, existingBooking.number_of_hours);
 
         // Sprawdzamy, czy istniejąca rezerwacja nakłada się na naszą potencjalną rezerwację
+        // Używamy isBefore i isAfter, aby sprawdzić, czy interwały się przecinają
         return (
           (isBefore(bookingStart, existingBookingEnd) && isAfter(bookingEnd, existingBookingStart)) ||
-          (isBefore(existingBookingStart, bookingEnd) && isAfter(existingBookingEnd, bookingStart)) ||
           (bookingStart.getTime() === existingBookingStart.getTime() && bookingEnd.getTime() === existingBookingEnd.getTime())
         );
       });
@@ -194,6 +193,7 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                    // Sprawdzamy, czy dla danej daty istnieją jakiekolwiek dostępne godziny dla wybranej liczby godzin
                     const hasHours = getAvailableHours(date, parseInt(numberOfHours)).length > 0;
                     
                     return (
