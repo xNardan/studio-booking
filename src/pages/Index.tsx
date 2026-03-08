@@ -154,21 +154,25 @@ const Index = () => {
                   <CardTitle className="mb-4 text-xl">Znajdź nas</CardTitle>
                   <div className="flex items-center gap-4 mb-4">
                     <Mail className="text-primary w-6 h-6" />
-                    <a href="mailto:kontakt@flowstudio.pl" className="text-lg hover:text-primary transition-colors">kontakt@flowstudio.pl</a>
+                    <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-primary transition-colors">flowstudiobp@gmail.com</a>
                   </div>
                   <div className="flex items-center gap-4 mb-4">
                     <Phone className="text-primary w-6 h-6" />
                     <a href="tel:+48123456789" className="text-lg hover:text-primary transition-colors">+48 123 456 789</a>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 mb-4">
                     <Instagram className="text-primary w-6 h-6" />
-                    <a href="https://instagram.com/flowstudio" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-primary transition-colors">@flowstudio</a>
+                    <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-primary transition-colors">@flowstudio.bp</a>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <MapPin className="text-primary w-6 h-6" />
+                    <p className="text-lg">Al. Jana Pawła II 11, Biała Podlaska</p>
                   </div>
                 </Card>
               </div>
               <div className="rounded-3xl overflow-hidden shadow-xl h-[400px] lg:h-auto">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2560.9100400000003!2d19.94497991571749!3d50.06143007942309!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47165b0000000001%3A0x123456789abcdef0!2sRynek%20G%C5%82%C3%B3wny%2C%20Krak%C3%B3w!5e0!3m2!1spl!2spl!4v1678901234567!5m2!1spl!2spl"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2440.9900000000003!2d23.1200000!3d52.0300000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4721920000000001%3A0x123456789abcdef0!2sAl.%20Jana%20Paw%C5%82a%20II%2011%2C%2021-500%20Bia%C5%82a%20Podlaska!5e0!3m2!1spl!2spl!4v1678901234567!5m2!1spl!2spl"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -186,7 +190,7 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground mb-4">© 2024 Flow Studio. Wszystkie prawa zastrzeżone.</p>
           <div className="flex justify-center gap-6 text-sm font-medium">
-            <a href="#" className="hover:text-primary transition-colors">Instagram</a>
+            <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
             <a href="#" className="hover:text-primary transition-colors">Facebook</a>
             <a href="#" className="hover:text-primary transition-colors">YouTube</a>
           </div>
