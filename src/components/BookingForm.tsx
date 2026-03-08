@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, Phone } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,8 @@ const BookingForm = () => {
     service: 'recording',
     name: '',
     email: '',
-    instagram: ''
+    instagram: '',
+    phone: '' // Dodano pole na numer telefonu
   });
 
   const nextSevenDays = useMemo(() => {
@@ -136,7 +137,6 @@ const BookingForm = () => {
     if (!date || !startHour) return 0;
 
     let maxHours = 0;
-    // Zwiększono maksymalny zakres sprawdzanych godzin, np. do 12
     for (let i = 1; i <= 12; i++) { 
       const potentialBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
       const potentialBookingEnd = addHours(potentialBookingStart, i);
@@ -160,7 +160,7 @@ const BookingForm = () => {
       if (possible) {
         maxHours = i;
       } else {
-        break; // Jeśli nie można zarezerwować i godzin, to tym bardziej i+1
+        break; 
       }
     }
     console.log(`[BookingForm] Max bookable hours for ${format(date, 'yyyy-MM-dd')} at ${startHour}: ${maxHours}`);
@@ -174,18 +174,18 @@ const BookingForm = () => {
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    setSelectedHour(null); // Resetuj godzinę po zmianie daty
-    setNumberOfHours('1'); // Resetuj liczbę godzin
+    setSelectedHour(null); 
+    setNumberOfHours('1'); 
   };
 
   const handleHourSelect = (hour: string) => {
     setSelectedHour(hour);
-    setNumberOfHours('1'); // Resetuj liczbę godzin po zmianie godziny
+    setNumberOfHours('1'); 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !numberOfHours) {
+    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !formData.phone || !numberOfHours) {
       showError("Proszę wypełnić wszystkie pola.");
       return;
     }
@@ -200,6 +200,7 @@ const BookingForm = () => {
           customer_name: formData.name,
           customer_email: formData.email,
           customer_instagram: formData.instagram,
+          customer_phone: formData.phone, // Dodano numer telefonu
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_hour: selectedHour,
           number_of_hours: parseInt(numberOfHours)
@@ -220,8 +221,8 @@ const BookingForm = () => {
       setSelectedDate(null);
       setSelectedHour(null);
       setNumberOfHours('1');
-      setFormData({ service: 'recording', name: '', email: '', instagram: '' });
-      fetchExistingBookings(); // Odśwież listę rezerwacji po udanej rezerwacji
+      setFormData({ service: 'recording', name: '', email: '', instagram: '', phone: '' }); // Wyczyszczenie pola telefonu
+      fetchExistingBookings(); 
       
     } catch (error: any) {
       showError(error.message || "Wystąpił błąd podczas rezerwacji.");
@@ -262,7 +263,6 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    // Sprawdzamy, czy dla danej daty istnieją jakiekolwiek dostępne godziny (przynajmniej 1h)
                     const hasAnyAvailableHours = getAvailableHours(date).length > 0;
                     
                     return (
@@ -373,6 +373,22 @@ const BookingForm = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="phone">Numer telefonu</Label> {/* Dodano pole na numer telefonu */}
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Input 
+                        id="phone" 
+                        type="tel" 
+                        placeholder="Twój numer telefonu" 
+                        className="pl-10 rounded-xl h-12" 
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="instagram">Instagram</Label>
                     <div className="relative">
                       <Instagram className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
@@ -397,7 +413,7 @@ const BookingForm = () => {
                       <SelectContent>
                         {Array.from({ length: maxBookableHours }, (_, i) => i + 1).map(hourNum => (
                           <SelectItem key={hourNum} value={String(hourNum)}>
-                            {hourNum} godzina{hourNum > 1 ? 'y' : ''}
+                            {hourNum} godzina{hourNum > 1 && hourNum < 5 ? 'y' : (hourNum >= 5 ? 'in' : '')}
                           </SelectItem>
                         ))}
                       </SelectContent>
