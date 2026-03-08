@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -8,18 +8,19 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
-import { DatePicker } from '@/components/DatePicker'; // Import DatePicker
-import { format, startOfWeek, addWeeks, subWeeks, getDay } from 'date-fns';
-import { pl } from 'date-fns/locale'; // Importuj polską lokalizację
+import { DatePicker } from '@/components/DatePicker';
+import { format, startOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
-const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`); // 00:00 - 23:00
+const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
 const AdminAvailability = () => {
   const [availability, setAvailability] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Domyślnie dzisiejsza data
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectionStart, setSelectionStart] = useState<{ day: string; hour: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,8 +30,6 @@ const AdminAvailability = () => {
   }, [selectedDate]);
 
   const getWeekStartDate = (date: Date) => {
-    // startOfWeek w date-fns domyślnie zaczyna od niedzieli.
-    // Aby zacząć od poniedziałku, używamy { weekStartsOn: 1 }.
     return format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
   };
 
@@ -39,7 +38,7 @@ const AdminAvailability = () => {
     const weekStartDate = getWeekStartDate(date);
     try {
       const { data, error } = await supabase
-        .from('weekly_availability') // Nowa tabela do przechowywania tygodniowej dostępności
+        .from('weekly_availability')
         .select('*')
         .eq('week_start_date', weekStartDate);
       
@@ -49,10 +48,10 @@ const AdminAvailability = () => {
       days.forEach(day => formatted[day] = []);
       
       if (data && data.length > 0) {
-        const weeklyData = data[0].availability_data; // Zakładamy, że availability_data to JSONB
+        const weeklyData = data[0].availability_data;
         for (const day of days) {
           if (weeklyData[day]) {
-            formatted[day] = weeklyData[day];
+            formatted[day] = weeklyData[day].sort(); // Sort hours for consistent range selection
           }
         }
       }
@@ -65,16 +64,68 @@ const AdminAvailability = () => {
     }
   };
 
-  const toggleHour = (day: string, hour: string) => {
+  const handleHourClick = useCallback((day: string, hour: string) => {
     setAvailability(prev => {
       const dayHours = prev[day] || [];
-      if (dayHours.includes(hour)) {
-        return { ...prev, [day]: dayHours.filter(h => h !== hour) };
+      const hourIndex = hours.indexOf(hour);
+
+      if (selectionStart && selectionStart.day === day) {
+        // Complete a range selection
+        const startIndex = hours.indexOf(selectionStart.hour);
+        const endIndex = hourIndex;
+
+        const [start, end] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+        const hoursToToggle = hours.slice(start, end + 1);
+
+        const newDayHours = new Set(dayHours);
+        let allSelected = true;
+        for (const h of hoursToToggle) {
+          if (!newDayHours.has(h)) {
+            allSelected = false;
+            break;
+          }
+        }
+
+        if (allSelected) {
+          // If all hours in the range are already selected, deselect them
+          hoursToToggle.forEach(h => newDayHours.delete(h));
+        } else {
+          // Otherwise, select all hours in the range
+          hoursToToggle.forEach(h => newDayHours.add(h));
+        }
+
+        setSelectionStart(null);
+        return { ...prev, [day]: Array.from(newDayHours).sort() };
       } else {
-        return { ...prev, [day]: [...dayHours, hour] };
+        // Start a new range selection or toggle a single hour
+        setSelectionStart({ day, hour });
+        if (dayHours.includes(hour) && !selectionStart) {
+          // If clicking an already selected hour without an active selection, deselect it
+          return { ...prev, [day]: dayHours.filter(h => h !== hour).sort() };
+        } else if (!dayHours.includes(hour) && !selectionStart) {
+          // If clicking an unselected hour without an active selection, select it
+          return { ...prev, [day]: [...dayHours, hour].sort() };
+        }
+        return prev; // If selectionStart is active but on a different day, do nothing yet
       }
     });
-  };
+  }, [selectionStart]);
+
+  const isHourSelected = useCallback((day: string, hour: string) => {
+    return (availability[day] || []).includes(hour);
+  }, [availability]);
+
+  const isHourInRange = useCallback((day: string, hour: string) => {
+    if (!selectionStart || selectionStart.day !== day) return false;
+
+    const startIndex = hours.indexOf(selectionStart.hour);
+    const currentIndex = hours.indexOf(hour);
+
+    if (startIndex === -1 || currentIndex === -1) return false;
+
+    const [start, end] = startIndex < currentIndex ? [startIndex, currentIndex] : [currentIndex, startIndex];
+    return currentIndex >= start && currentIndex <= end;
+  }, [selectionStart]);
 
   const handleSave = async () => {
     if (!selectedDate) {
@@ -89,7 +140,7 @@ const AdminAvailability = () => {
         .upsert(
           {
             week_start_date: weekStartDate,
-            availability_data: availability // Zapisujemy cały obiekt jako JSONB
+            availability_data: availability
           },
           { onConflict: 'week_start_date' }
         );
@@ -111,18 +162,20 @@ const AdminAvailability = () => {
   const goToPreviousWeek = () => {
     if (selectedDate) {
       setSelectedDate(subWeeks(selectedDate, 1));
+      setSelectionStart(null); // Clear selection on week change
     }
   };
 
   const goToNextWeek = () => {
     if (selectedDate) {
       setSelectedDate(addWeeks(selectedDate, 1));
+      setSelectionStart(null); // Clear selection on week change
     }
   };
 
   const getWeekRange = (date: Date) => {
     const start = startOfWeek(date, { weekStartsOn: 1 });
-    const end = addWeeks(start, 1); // Koniec tygodnia to początek następnego
+    const end = addWeeks(start, 1);
     return `${format(start, 'dd.MM.yyyy', { locale: pl })} - ${format(subWeeks(end, 0), 'dd.MM.yyyy', { locale: pl })}`;
   };
 
@@ -195,17 +248,23 @@ const AdminAvailability = () => {
                 {hours.map(hour => (
                   <tr key={hour} className="hover:bg-secondary/20 transition-colors">
                     <td className="p-4 border-b border-border font-medium text-sm">{hour}</td>
-                    {days.map(day => (
-                      <td key={`${day}-${hour}`} className="p-4 border-b border-border text-center">
-                        <div className="flex justify-center">
-                          <Checkbox 
-                            checked={(availability[day] || []).includes(hour)}
-                            onCheckedChange={() => toggleHour(day, hour)}
-                            className="w-6 h-6 rounded-md"
-                          />
-                        </div>
-                      </td>
-                    ))}
+                    {days.map(day => {
+                      const isSelected = isHourSelected(day, hour);
+                      const inRange = isHourInRange(day, hour);
+                      const isStart = selectionStart?.day === day && selectionStart?.hour === hour;
+
+                      return (
+                        <td key={`${day}-${hour}`} className="p-4 border-b border-border text-center">
+                          <div className="flex justify-center">
+                            <Checkbox 
+                              checked={isSelected}
+                              onCheckedChange={() => handleHourClick(day, hour)}
+                              className={`w-6 h-6 rounded-md ${inRange ? 'bg-blue-200 border-blue-500' : ''} ${isStart ? 'border-2 border-blue-700' : ''}`}
+                            />
+                          </div>
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
