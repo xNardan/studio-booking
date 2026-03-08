@@ -11,7 +11,8 @@ import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/ThemeProvider";
-import PrivacyPolicy from "./components/PrivacyPolicy"; // Import PrivacyPolicy
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import CookieConsent from "./components/CookieConsent"; // Import CookieConsent
 
 const queryClient = new QueryClient();
 
@@ -26,7 +27,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/rezerwacja" element={<BookingPage />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} /> {/* Nowa trasa */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route 
               path="/admin" 
               element={
@@ -45,6 +46,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsent /> {/* Dodanie komponentu CookieConsent */}
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
