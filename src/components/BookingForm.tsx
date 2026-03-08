@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight } from 'lucide-react'; // Dodano ArrowLeft i ArrowRight
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
