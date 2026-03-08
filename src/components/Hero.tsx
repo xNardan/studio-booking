@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Mic2, Headphones, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
@@ -22,9 +23,9 @@ const Hero = () => {
             Flow Studio to miejsce, gdzie technologia spotyka się z kreatywnością. Nagrywaj, miksuj i twórz muzykę na najwyższym poziomie.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <a href="#booking" className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
+            <Link to="/rezerwacja" className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
               Zarezerwuj sesję
-            </a>
+            </Link>
             <button className="bg-secondary text-secondary-foreground px-8 py-4 rounded-full font-bold text-lg hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2">
               <Play className="w-5 h-5 fill-current" /> Zobacz studio
             </button>
