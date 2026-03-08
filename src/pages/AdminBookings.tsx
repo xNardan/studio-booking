@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { showSuccess, showError } from '@/utils/toast';
-import { Calendar as CalendarIcon, LogOut, Loader2, Trash2, Mail, Phone, User, ArrowLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, LogOut, Loader2, Trash2, Mail, Phone, User, ArrowLeft, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -99,6 +99,7 @@ const AdminBookings = () => {
                     <TableHead className="font-bold">Data i Godzina</TableHead>
                     <TableHead className="font-bold">Klient</TableHead>
                     <TableHead className="font-bold">Usługa</TableHead>
+                    <TableHead className="font-bold">Ilość godzin</TableHead> {/* Nowa kolumna */}
                     <TableHead className="font-bold">Kontakt</TableHead>
                     <TableHead className="text-right font-bold">Akcje</TableHead>
                   </TableRow>
@@ -122,6 +123,12 @@ const AdminBookings = () => {
                         <span className="capitalize bg-gray-accent/10 text-gray-accent px-3 py-1 rounded-full text-xs font-bold">
                           {booking.service}
                         </span>
+                      </TableCell>
+                      <TableCell> {/* Nowa komórka */}
+                        <div className="flex items-center gap-1">
+                          <Clock size={14} className="text-muted-foreground" />
+                          <span>{booking.number_of_hours}h</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1 text-sm">
