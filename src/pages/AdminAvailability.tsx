@@ -150,9 +150,9 @@ const AdminAvailability = () => {
                       </td>
                     ))}
                   </tr>
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
