@@ -1,44 +1,49 @@
--- 1. Add a unique constraint to prevent double bookings on the same date and hour
-ALTER TABLE public.bookings 
-ADD CONSTRAINT unique_booking_slot UNIQUE (booking_date, booking_hour);
-
--- 2. Create a function to validate that the booking matches the studio's availability
-CREATE OR REPLACE FUNCTION public.validate_booking_availability()
+-- Funkcja sprawdzająca dostępność godzin z uwzględnieniem czasu trwania rezerwacji
+CREATE OR REPLACE FUNCTION check_booking_overlap()
 RETURNS TRIGGER AS $$
 DECLARE
-    day_name_pl TEXT;
-    is_available BOOLEAN;
+    existing_booking_end_time TIME;
+    new_booking_start_time TIME;
+    new_booking_end_time TIME;
 BEGIN
-    -- Map PostgreSQL day of week (0-6) to Polish day names used in the availability table
-    SELECT CASE EXTRACT(DOW FROM NEW.booking_date)
-        WHEN 0 THEN 'Niedziela'
-        WHEN 1 THEN 'Poniedziałek'
-        WHEN 2 THEN 'Wtorek'
-        WHEN 3 THEN 'Środa'
-        WHEN 4 THEN 'Czwartek'
-        WHEN 5 THEN 'Piątek'
-        WHEN 6 THEN 'Sobota'
-    END INTO day_name_pl;
+    -- Konwertuj godziny rezerwacji na typ TIME
+    new_booking_start_time := NEW.booking_hour::TIME;
+    new_booking_end_time := (NEW.booking_hour::TIME + (NEW.number_of_hours || ' hours')::INTERVAL);
 
-    -- Check if the requested hour exists in the availability for that specific day
-    SELECT EXISTS (
-        SELECT 1 
-        FROM public.availability 
-        WHERE day_name = day_name_pl 
-        AND NEW.booking_hour = ANY(hours)
-    ) INTO is_available;
-
-    -- If the slot is not in the availability table, block the insert
-    IF NOT is_available THEN
-        RAISE EXCEPTION 'Wybrany termin (%) w dniu % nie jest dostępny w grafiku.', NEW.booking_hour, day_name_pl;
+    -- Sprawdź, czy nowa rezerwacja nakłada się na istniejące rezerwacje
+    IF EXISTS (
+        SELECT 1
+        FROM public.bookings
+        WHERE
+            booking_date = NEW.booking_date AND
+            id != NEW.id AND -- Wyklucz aktualizowaną rezerwację (jeśli to update)
+            (
+                -- Istniejąca rezerwacja zaczyna się w trakcie nowej rezerwacji
+                (booking_hour::TIME >= new_booking_start_time AND booking_hour::TIME < new_booking_end_time)
+                OR
+                -- Istniejąca rezerwacja kończy się w trakcie nowej rezerwacji
+                ((booking_hour::TIME + (number_of_hours || ' hours')::INTERVAL) > new_booking_start_time AND (booking_hour::TIME + (number_of_hours || ' hours')::INTERVAL) <= new_booking_end_time)
+                OR
+                -- Nowa rezerwacja zawiera istniejącą rezerwację
+                (booking_hour::TIME < new_booking_start_time AND (booking_hour::TIME + (number_of_hours || ' hours')::INTERVAL) > new_booking_end_time)
+                OR
+                -- Istniejąca rezerwacja zawiera nową rezerwację
+                (new_booking_start_time < booking_hour::TIME AND new_booking_end_time > (booking_hour::TIME + (number_of_hours || ' hours')::INTERVAL))
+            )
+    ) THEN
+        RAISE EXCEPTION 'Wybrany termin lub część wybranego terminu jest już zajęta.';
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- 3. Create a trigger that runs before every insert on the bookings table
-DROP TRIGGER IF EXISTS check_booking_availability ON public.bookings;
-CREATE TRIGGER check_booking_availability
+-- Trigger wywoływany przed wstawieniem nowej rezerwacji
+CREATE TRIGGER check_booking_overlap_trigger
 BEFORE INSERT ON public.bookings
-FOR EACH ROW EXECUTE FUNCTION public.validate_booking_availability();
+FOR EACH ROW EXECUTE FUNCTION check_booking_overlap();
+
+-- Trigger wywoływany przed aktualizacją rezerwacji (jeśli kiedykolwiek będzie taka możliwość)
+CREATE TRIGGER check_booking_overlap_update_trigger
+BEFORE UPDATE ON public.bookings
+FOR EACH ROW EXECUTE FUNCTION check_booking_overlap();
