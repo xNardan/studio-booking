@@ -111,68 +111,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Cennik</h2>
-              <p className="text-muted-foreground text-lg">
-                Przejrzyste ceny, bez ukrytych kosztów. Skontaktuj się z nami, aby uzyskać indywidualną wycenę.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <Card className="border-none shadow-lg rounded-3xl flex flex-col">
-                <CardHeader className="text-center">
-                  <DollarSign className="mx-auto w-12 h-12 text-primary mb-4" />
-                  <CardTitle className="text-2xl font-bold">Nagrywanie</CardTitle>
-                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-primary">150 zł</span>/h</p>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-                    <li>Profesjonalna kabina lektorska</li>
-                    <li>Wysokiej klasy mikrofony</li>
-                    <li>Realizator dźwięku</li>
-                    <li>Podstawowy montaż</li>
-                  </ul>
-                  <Button className="w-full rounded-full font-bold">Zarezerwuj</Button>
-                </CardContent>
-              </Card>
-              <Card className="border-none shadow-lg rounded-3xl flex flex-col">
-                <CardHeader className="text-center">
-                  <Headphones className="mx-auto w-12 h-12 text-primary mb-4" />
-                  <CardTitle className="text-2xl font-bold">Miks & Mastering</CardTitle>
-                  <p className="text-muted-foreground">od <span className="text-3xl font-extrabold text-primary">400 zł</span>/utwór</p>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-                    <li>Profesjonalny miks utworu</li>
-                    <li>Mastering do standardów branżowych</li>
-                    <li>Korekcja wokalu</li>
-                    <li>Dwie rundy poprawek</li>
-                  </ul>
-                  <Button className="w-full rounded-full font-bold">Zarezerwuj</Button>
-                </CardContent>
-              </Card>
-              <Card className="border-none shadow-lg rounded-3xl flex flex-col">
-                <CardHeader className="text-center">
-                  <Mic className="mx-auto w-12 h-12 text-primary mb-4" />
-                  <CardTitle className="text-2xl font-bold">Produkcja Muzyczna</CardTitle>
-                  <p className="text-muted-foreground"><span className="text-3xl font-extrabold text-primary">Wycena</span> indywidualna</p>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-                    <li>Tworzenie aranżacji od podstaw</li>
-                    <li>Kompozycja i orkiestracja</li>
-                    <li>Wsparcie artystyczne</li>
-                    <li>Pełna realizacja projektu</li>
-                  </ul>
-                  <Button className="w-full rounded-full font-bold">Skontaktuj się</Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
         {/* Contact Section */}
         <section id="contact" className="py-20 bg-secondary/30">
           <div className="container mx-auto px-4">
