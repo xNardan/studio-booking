@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccess, showError } from '@/utils/toast';
 import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
-const hours = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`); // 08:00 - 22:00
+const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`); // 00:00 - 23:00
 
 const AdminAvailability = () => {
   const [availability, setAvailability] = useState<Record<string, string[]>>({});
