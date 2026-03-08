@@ -16,7 +16,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"> {/* Dodanie ThemeProvidera */}
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"> {/* Ustawienie domyślnego motywu na ciemny */}
       <TooltipProvider>
         <Toaster />
         <Sonner />
