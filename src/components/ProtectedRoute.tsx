@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { showError } from '@/utils/toast';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
@@ -11,14 +12,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // getUser() is more secure as it verifies the JWT with the Supabase server
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (error || !user) {
+      if (authError || !user) {
+        navigate('/login');
+        setLoading(false);
+        return;
+      }
+
+      // Verify admin role in profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || profile?.role !== 'admin') {
+        console.error("Access denied: User is not an admin", profileError);
+        await supabase.auth.signOut();
+        showError("Brak uprawnień administratora.");
         navigate('/login');
       } else {
         setAuthenticated(true);
       }
+      
       setLoading(false);
     };
     checkAuth();
@@ -29,7 +46,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-muted-foreground font-medium animate-pulse">Weryfikacja dostępu...</p>
+          <p className="text-muted-foreground font-medium animate-pulse">Weryfikacja uprawnień...</p>
         </div>
       </div>
     );
