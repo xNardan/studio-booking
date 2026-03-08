@@ -92,12 +92,12 @@ const Index = () => {
               </Card>
               <Card className="border-none shadow-lg rounded-3xl">
                 <CardHeader>
-                  <CardTitle className="text-xl">Monitory Odsłuchowe</CardTitle>
+                  <CardTitle className="text-xl">Słuchawki i Monitory Odsłuchowe</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
                     <li>KRK Rokit 5</li>
-                    <li>Beyerdynamic DT 770 Pro 80Ohm</li>
+                    <li>Beyerdynamic DT 770 Pro 80 Ohm</li>
                     <li>Superlux HD-660 Pro 150 Ohm</li>
                     <li>Beyerdynamic DT 990 Pro 250 Ohm</li>
                   </ul>
