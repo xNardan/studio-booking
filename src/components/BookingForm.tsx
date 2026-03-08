@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore } from "date-fns";
+import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,31 +74,55 @@ const BookingForm = () => {
 
   const getAvailableHoursForDate = (date: Date) => {
     const dayName = dayMap[getDay(date)];
-    const availableHours = dbAvailability[dayName] || [];
+    const availableHoursToday = dbAvailability[dayName] || [];
+    const nextDayName = dayMap[getDay(addDays(date, 1))];
+    const availableHoursNextDay = dbAvailability[nextDayName] || [];
 
     if (!selectedDate) return [];
 
     const currentDayBookings = existingBookings.filter(booking => 
       format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
     );
+    const nextDayBookings = existingBookings.filter(booking => 
+      format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(addDays(selectedDate, 1), 'yyyy-MM-dd')
+    );
 
     const allPossibleHours = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`); // 08:00 - 22:00
 
     return allPossibleHours.filter(hour => {
-      // Sprawdź, czy godzina jest w ogólnej dostępności
-      if (!availableHours.includes(hour)) {
+      const numHours = parseInt(numberOfHours);
+      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(selectedDate, parseInt(hour.split(':')[0])), 0), 0), 0);
+      const bookingEnd = addHours(bookingStart, numHours);
+
+      // Sprawdź, czy godzina rozpoczęcia jest dostępna w wybranym dniu
+      if (!availableHoursToday.includes(hour)) {
         return false;
       }
 
-      // Sprawdź, czy wybrana liczba godzin nie koliduje z istniejącymi rezerwacjami
-      const bookingStart = parseISO(format(selectedDate, 'yyyy-MM-dd') + 'T' + hour + ':00');
-      const bookingEnd = addHours(bookingStart, parseInt(numberOfHours));
+      // Sprawdź dostępność dla każdej godziny w ramach rezerwacji
+      for (let i = 0; i < numHours; i++) {
+        const currentCheckHour = addHours(bookingStart, i);
+        const currentCheckDayName = dayMap[getDay(currentCheckHour)];
+        const currentCheckHourFormatted = format(currentCheckHour, 'HH:00');
 
-      for (const existingBooking of currentDayBookings) {
+        // Jeśli rezerwacja przechodzi na następny dzień
+        if (isAfter(currentCheckHour, setHours(selectedDate, 23))) { // Jeśli godzina jest po 23:00 w wybranym dniu
+          if (!availableHoursNextDay.includes(currentCheckHourFormatted)) {
+            return false;
+          }
+        } else { // W przeciwnym razie sprawdzamy dostępność w tym samym dniu
+          if (!availableHoursToday.includes(currentCheckHourFormatted)) {
+            return false;
+          }
+        }
+      }
+
+      // Sprawdź kolizje z istniejącymi rezerwacjami
+      const allRelevantBookings = [...currentDayBookings, ...nextDayBookings];
+      for (const existingBooking of allRelevantBookings) {
         const existingStart = parseISO(format(parseISO(existingBooking.booking_date), 'yyyy-MM-dd') + 'T' + existingBooking.booking_hour + ':00');
         const existingEnd = addHours(existingStart, existingBooking.number_of_hours);
 
-        // Sprawdź, czy nowa rezerwacja nakłada się na istniejącą
         if (
           (isBefore(bookingStart, existingEnd) && isBefore(existingStart, bookingEnd))
         ) {
@@ -106,15 +130,6 @@ const BookingForm = () => {
         }
       }
       
-      // Sprawdź, czy rezerwacja nie wykracza poza dostępne godziny w danym dniu
-      const lastAvailableHour = availableHours[availableHours.length - 1];
-      if (lastAvailableHour) {
-        const lastAvailableTime = parseISO(format(selectedDate, 'yyyy-MM-dd') + 'T' + lastAvailableHour + ':00');
-        if (isBefore(lastAvailableTime, addHours(bookingStart, parseInt(numberOfHours) - 1))) {
-          return false;
-        }
-      }
-
       return true;
     });
   };
