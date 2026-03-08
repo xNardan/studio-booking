@@ -309,7 +309,8 @@ const BookingForm = () => {
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
   );
 };
 
