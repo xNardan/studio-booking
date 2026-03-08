@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, Phone } from 'lucide-react';
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -105,31 +105,21 @@ const BookingForm = () => {
     });
   };
 
-  const getAvailableHours = (date: Date) => {
-    const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-    console.log(`[BookingForm] getAvailableHours for date: ${format(date, 'yyyy-MM-dd')}`);
+  const isHourTrulyAvailable = (date: Date, startHour: string) => {
+    const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
+    const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy dostępność dla pojedynczej godziny
 
-    return allPossibleHours.filter(startHour => {
-      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-      const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy dostępność dla pojedynczej godziny
+    // 1. Sprawdź dostępność w grafiku administratora dla tej godziny
+    if (!isHourAvailableInAdminSchedule(bookingStart, startHour)) {
+      return false;
+    }
 
-      console.log(`[BookingForm] Checking startHour: ${startHour}, bookingStart: ${bookingStart}, bookingEnd: ${bookingEnd}`);
-
-      // 1. Sprawdź dostępność w grafiku administratora dla tej godziny
-      if (!isHourAvailableInAdminSchedule(bookingStart, startHour)) {
-        console.log(`[BookingForm]   REJECTED: ${startHour} because it's not available in admin schedule.`);
-        return false;
-      }
-
-      // 2. Sprawdź kolizje z istniejącymi rezerwacjami dla tej pojedynczej godziny
-      if (hasBookingCollision(bookingStart, bookingEnd)) {
-        console.log(`[BookingForm] REJECTED: ${startHour} due to collision with existing booking.`);
-        return false;
-      }
-      
-      console.log(`[BookingForm] ACCEPTED: ${startHour}`);
-      return true;
-    });
+    // 2. Sprawdź kolizje z istniejącymi rezerwacjami dla tej pojedynczej godziny
+    if (hasBookingCollision(bookingStart, bookingEnd)) {
+      return false;
+    }
+    
+    return true;
   };
 
   const getMaxBookableHours = (date: Date, startHour: string) => {
@@ -231,9 +221,13 @@ const BookingForm = () => {
     }
   };
 
-  const availableHoursForSelectedDate = useMemo(() => {
+  const allPossibleHoursForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
-    return getAvailableHours(selectedDate); 
+    const allHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+    return allHours.map(hour => ({
+      hour,
+      isAvailable: isHourTrulyAvailable(selectedDate, hour)
+    }));
   }, [selectedDate, dbAvailability, existingBookings]);
 
   const maxBookableHours = useMemo(() => {
@@ -276,7 +270,7 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    const hasAnyAvailableHours = getAvailableHours(date).length > 0;
+                    const hasAnyAvailableHours = allPossibleHoursForSelectedDate.some(h => h.isAvailable);
                     
                     return (
                       <button
@@ -310,17 +304,19 @@ const BookingForm = () => {
                       DOSTĘPNE GODZINY ({format(selectedDate, "EEEE, d MMMM", { locale: pl })}):
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                      {availableHoursForSelectedDate.length > 0 ? (
-                        availableHoursForSelectedDate.map((hour) => (
+                      {allPossibleHoursForSelectedDate.length > 0 ? (
+                        allPossibleHoursForSelectedDate.map(({ hour, isAvailable }) => (
                           <button
                             key={hour}
                             type="button"
+                            disabled={!isAvailable}
                             onClick={() => handleHourSelect(hour)}
                             className={cn(
                               "py-3 px-2 rounded-xl text-sm font-bold transition-all border-2",
                               selectedHour === hour
                                 ? "bg-gray-accent text-primary-foreground border-gray-accent"
-                                : "bg-background border-border hover:border-gray-accent/50"
+                                : "bg-background border-border hover:border-gray-accent/50",
+                              !isAvailable && "opacity-30 cursor-not-allowed bg-secondary/30 border-border"
                             )}
                           >
                             {hour}
