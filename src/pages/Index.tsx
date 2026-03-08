@@ -1,18 +1,57 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { MapPin, Mail, Instagram, Phone, Mic, Headphones, DollarSign, Users } from 'lucide-react';
+import { MapPin, Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label'; // Import Label
+import { Label } from '@/components/ui/label';
+import { showSuccess, showError } from '@/utils/toast'; // Import toastów
 
 const Index = () => {
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [loadingContact, setLoadingContact] = useState(false);
+
+  const handleContactInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setContactForm(prev => ({ ...prev, [id.replace('contact-', '')]: value }));
+  };
+
+  const handleSubmitContactForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoadingContact(true);
+
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      showError("Proszę wypełnić wszystkie pola formularza kontaktowego.");
+      setLoadingContact(false);
+      return;
+    }
+
+    // Symulacja wysyłania danych
+    try {
+      // Tutaj w przyszłości można dodać logikę wysyłania danych do API
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Symulacja opóźnienia sieci
+
+      console.log("Wiadomość do wysłania:", contactForm);
+      showSuccess("Twoja wiadomość została wysłana!");
+      setContactForm({ name: '', email: '', message: '' }); // Wyczyszczenie formularza
+    } catch (error) {
+      console.error("Błąd wysyłania wiadomości:", error);
+      showError("Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
+    } finally {
+      setLoadingContact(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       <Navbar />
@@ -134,20 +173,45 @@ const Index = () => {
               <div className="space-y-6">
                 <Card className="border-none shadow-lg rounded-3xl p-6">
                   <CardTitle className="mb-4 text-xl">Napisz do nas</CardTitle>
-                  <form className="space-y-4">
+                  <form onSubmit={handleSubmitContactForm} className="space-y-4">
                     <div>
                       <Label htmlFor="contact-name">Imię</Label>
-                      <Input id="contact-name" placeholder="Twoje imię" className="rounded-xl h-12" />
+                      <Input 
+                        id="contact-name" 
+                        placeholder="Twoje imię" 
+                        className="rounded-xl h-12" 
+                        value={contactForm.name}
+                        onChange={handleContactInputChange}
+                        disabled={loadingContact}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="contact-email">Email</Label>
-                      <Input id="contact-email" type="email" placeholder="twoj@email.com" className="rounded-xl h-12" />
+                      <Input 
+                        id="contact-email" 
+                        type="email" 
+                        placeholder="twoj@email.com" 
+                        className="rounded-xl h-12" 
+                        value={contactForm.email}
+                        onChange={handleContactInputChange}
+                        disabled={loadingContact}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="contact-message">Wiadomość</Label>
-                      <Textarea id="contact-message" placeholder="Twoja wiadomość..." rows={5} className="rounded-xl" />
+                      <Textarea 
+                        id="contact-message" 
+                        placeholder="Twoja wiadomość..." 
+                        rows={5} 
+                        className="rounded-xl" 
+                        value={contactForm.message}
+                        onChange={handleContactInputChange}
+                        disabled={loadingContact}
+                      />
                     </div>
-                    <Button type="submit" className="w-full rounded-full font-bold h-12">Wyślij wiadomość</Button>
+                    <Button type="submit" className="w-full rounded-full font-bold h-12" disabled={loadingContact}>
+                      {loadingContact ? "Wysyłanie..." : "Wyślij wiadomość"}
+                    </Button>
                   </form>
                 </Card>
                 <Card className="border-none shadow-lg rounded-3xl p-6">
