@@ -37,7 +37,6 @@ const BookingForm = () => {
     name: '',
     email: '',
     instagram: '',
-    // Usunięto pole 'phone'
   });
 
   const nextSevenDays = useMemo(() => {
@@ -85,21 +84,23 @@ const BookingForm = () => {
     }
   };
 
-  const isHourAvailable = (checkDate: Date, checkHour: string) => {
+  const isHourAvailableInAdminSchedule = (checkDate: Date, checkHour: string) => {
     const checkDayName = dayMap[getDay(checkDate)];
     const dayAvailability = dbAvailability[checkDayName];
     return dayAvailability && dayAvailability.includes(checkHour);
   };
 
-  const hasCollision = (potentialBookingStart: Date, potentialBookingEnd: Date) => {
+  const hasBookingCollision = (potentialBookingStart: Date, potentialBookingEnd: Date) => {
     return existingBookings.some(existingBooking => {
       const existingBookingDate = parseISO(existingBooking.booking_date);
       const existingBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(existingBookingDate, parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
       const existingBookingEnd = addHours(existingBookingStart, existingBooking.number_of_hours);
 
+      // Sprawdzenie, czy zakresy czasowe się nakładają
       return (
         (isBefore(potentialBookingStart, existingBookingEnd) && isAfter(potentialBookingEnd, existingBookingStart)) ||
-        (potentialBookingStart.getTime() === existingBookingStart.getTime() && potentialBookingEnd.getTime() === existingBookingEnd.getTime())
+        (potentialBookingStart.getTime() === existingBookingStart.getTime() && potentialBookingEnd.getTime() === existingBookingEnd.getTime()) ||
+        (isBefore(existingBookingStart, potentialBookingEnd) && isAfter(existingBookingEnd, potentialBookingStart))
       );
     });
   };
@@ -110,16 +111,18 @@ const BookingForm = () => {
 
     return allPossibleHours.filter(startHour => {
       const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-      const bookingEnd = addHours(bookingStart, 1);
+      const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy dostępność dla pojedynczej godziny
 
       console.log(`[BookingForm] Checking startHour: ${startHour}, bookingStart: ${bookingStart}, bookingEnd: ${bookingEnd}`);
 
-      if (!isHourAvailable(bookingStart, startHour)) {
+      // 1. Sprawdź dostępność w grafiku administratora dla tej godziny
+      if (!isHourAvailableInAdminSchedule(bookingStart, startHour)) {
         console.log(`[BookingForm]   REJECTED: ${startHour} because it's not available in admin schedule.`);
         return false;
       }
 
-      if (hasCollision(bookingStart, bookingEnd)) {
+      // 2. Sprawdź kolizje z istniejącymi rezerwacjami dla tej pojedynczej godziny
+      if (hasBookingCollision(bookingStart, bookingEnd)) {
         console.log(`[BookingForm] REJECTED: ${startHour} due to collision with existing booking.`);
         return false;
       }
@@ -134,19 +137,22 @@ const BookingForm = () => {
 
     let maxHours = 0;
     for (let i = 1; i <= 12; i++) { 
-      const potentialBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-      const potentialBookingEnd = addHours(potentialBookingStart, i);
+      const potentialBookingStartSegment = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
+      const potentialBookingEndSegment = addHours(potentialBookingStartSegment, i);
 
       let possible = true;
       for (let j = 0; j < i; j++) {
-        const currentCheckTime = addHours(potentialBookingStart, j);
+        const currentCheckTime = addHours(potentialBookingStartSegment, j);
         const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
-        if (!isHourAvailable(currentCheckTime, currentCheckHourFormatted)) {
+        const currentSegmentEnd = addHours(currentCheckTime, 1);
+
+        // Sprawdź dostępność w grafiku administratora dla każdej godziny w zakresie
+        if (!isHourAvailableInAdminSchedule(currentCheckTime, currentCheckHourFormatted)) {
           possible = false;
           break;
         }
-        const currentSegmentEnd = addHours(currentCheckTime, 1);
-        if (hasCollision(currentCheckTime, currentSegmentEnd)) {
+        // Sprawdź kolizje z istniejącymi rezerwacjami dla każdej godziny w zakresie
+        if (hasBookingCollision(currentCheckTime, currentSegmentEnd)) {
           possible = false;
           break;
         }
@@ -180,7 +186,6 @@ const BookingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Usunięto walidację dla formData.phone
     if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !numberOfHours) {
       showError("Proszę wypełnić wszystkie pola.");
       return;
@@ -196,7 +201,6 @@ const BookingForm = () => {
           customer_name: formData.name,
           customer_email: formData.email,
           customer_instagram: formData.instagram,
-          // Usunięto customer_phone
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_hour: selectedHour,
           number_of_hours: parseInt(numberOfHours)
@@ -212,12 +216,12 @@ const BookingForm = () => {
         throw insertError;
       }
 
-      showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour} na ${numberOfHours} godzin.`);
+      showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour} na ${numberOfHours} ${formatHoursPlural(parseInt(numberOfHours))}.`);
       
       setSelectedDate(null);
       setSelectedHour(null);
       setNumberOfHours('1');
-      setFormData({ service: 'recording', name: '', email: '', instagram: '' }); // Usunięto phone z resetowania formularza
+      setFormData({ service: 'recording', name: '', email: '', instagram: '' });
       fetchExistingBookings(); 
       
     } catch (error: any) {
@@ -380,8 +384,6 @@ const BookingForm = () => {
                       />
                     </div>
                   </div>
-
-                  {/* Usunięto pole na numer telefonu */}
 
                   <div className="space-y-2">
                     <Label htmlFor="instagram">Instagram</Label>
