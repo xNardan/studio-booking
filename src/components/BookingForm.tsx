@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { format, addDays, startOfToday, getDay } from "date-fns";
+import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,21 +13,22 @@ import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from '@/integrations/supabase/client';
 
 const dayMap: Record<number, string> = {
+  0: "Niedziela",
   1: "Poniedziałek",
   2: "Wtorek",
   3: "Środa",
   4: "Czwartek",
   5: "Piątek",
-  6: "Sobota",
-  0: "Niedziela"
+  6: "Sobota"
 };
 
 const BookingForm = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
-  const [numberOfHours, setNumberOfHours] = useState<string>('1'); // Nowy stan dla ilości godzin
+  const [numberOfHours, setNumberOfHours] = useState<string>('1');
   const [loading, setLoading] = useState(false);
   const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
+  const [existingBookings, setExistingBookings] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     service: 'recording',
@@ -42,24 +43,80 @@ const BookingForm = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAvailability = async () => {
-      const { data, error } = await supabase.from('availability').select('*');
-      if (error) {
-        console.error("Błąd pobierania dostępności:", error);
-      } else if (data) {
-        const formatted = data.reduce((acc: any, curr: any) => {
-          acc[curr.day_name] = curr.hours;
-          return acc;
-        }, {});
-        setDbAvailability(formatted);
-      }
+    const fetchData = async () => {
+      await fetchAvailability();
+      await fetchExistingBookings();
     };
-    fetchAvailability();
+    fetchData();
   }, []);
 
-  const getHoursForDate = (date: Date) => {
+  const fetchAvailability = async () => {
+    const { data, error } = await supabase.from('availability').select('*');
+    if (error) {
+      console.error("Błąd pobierania dostępności:", error);
+    } else if (data) {
+      const formatted = data.reduce((acc: any, curr: any) => {
+        acc[curr.day_name] = curr.hours;
+        return acc;
+      }, {});
+      setDbAvailability(formatted);
+    }
+  };
+
+  const fetchExistingBookings = async () => {
+    const { data, error } = await supabase.from('bookings').select('*');
+    if (error) {
+      console.error("Błąd pobierania istniejących rezerwacji:", error);
+    } else if (data) {
+      setExistingBookings(data);
+    }
+  };
+
+  const getAvailableHoursForDate = (date: Date) => {
     const dayName = dayMap[getDay(date)];
-    return dbAvailability[dayName] || [];
+    const availableHours = dbAvailability[dayName] || [];
+
+    if (!selectedDate) return [];
+
+    const currentDayBookings = existingBookings.filter(booking => 
+      format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+    );
+
+    const allPossibleHours = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`); // 08:00 - 22:00
+
+    return allPossibleHours.filter(hour => {
+      // Sprawdź, czy godzina jest w ogólnej dostępności
+      if (!availableHours.includes(hour)) {
+        return false;
+      }
+
+      // Sprawdź, czy wybrana liczba godzin nie koliduje z istniejącymi rezerwacjami
+      const bookingStart = parseISO(format(selectedDate, 'yyyy-MM-dd') + 'T' + hour + ':00');
+      const bookingEnd = addHours(bookingStart, parseInt(numberOfHours));
+
+      for (const existingBooking of currentDayBookings) {
+        const existingStart = parseISO(format(parseISO(existingBooking.booking_date), 'yyyy-MM-dd') + 'T' + existingBooking.booking_hour + ':00');
+        const existingEnd = addHours(existingStart, existingBooking.number_of_hours);
+
+        // Sprawdź, czy nowa rezerwacja nakłada się na istniejącą
+        if (
+          (isBefore(bookingStart, existingEnd) && isBefore(existingStart, bookingEnd))
+        ) {
+          return false;
+        }
+      }
+      
+      // Sprawdź, czy rezerwacja nie wykracza poza dostępne godziny w danym dniu
+      const lastAvailableHour = availableHours[availableHours.length - 1];
+      if (lastAvailableHour) {
+        const lastAvailableTime = parseISO(format(selectedDate, 'yyyy-MM-dd') + 'T' + lastAvailableHour + ':00');
+        if (isBefore(lastAvailableTime, addHours(bookingStart, parseInt(numberOfHours) - 1))) {
+          return false;
+        }
+      }
+
+      return true;
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,7 +143,7 @@ const BookingForm = () => {
           customer_instagram: formData.instagram,
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_hour: selectedHour,
-          number_of_hours: parseInt(numberOfHours) // Dodaję ilość godzin
+          number_of_hours: parseInt(numberOfHours)
         });
 
       if (insertError) {
@@ -103,8 +160,9 @@ const BookingForm = () => {
       
       setSelectedDate(null);
       setSelectedHour(null);
-      setNumberOfHours('1'); // Resetuję ilość godzin
+      setNumberOfHours('1');
       setFormData({ service: 'recording', name: '', email: '', instagram: '' });
+      fetchExistingBookings(); // Odśwież listę rezerwacji po udanej rezerwacji
       
     } catch (error: any) {
       showError(error.message || "Wystąpił błąd podczas rezerwacji.");
@@ -112,6 +170,11 @@ const BookingForm = () => {
       setLoading(false);
     }
   };
+
+  const availableHoursForSelectedDate = useMemo(() => {
+    if (!selectedDate) return [];
+    return getAvailableHoursForDate(selectedDate);
+  }, [selectedDate, dbAvailability, existingBookings, numberOfHours]);
 
   return (
     <section id="booking" className="py-24 bg-secondary/10">
@@ -135,7 +198,7 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    const hasHours = getHoursForDate(date).length > 0;
+                    const hasHours = getAvailableHoursForDate(date).length > 0;
                     
                     return (
                       <button
@@ -172,8 +235,8 @@ const BookingForm = () => {
                       DOSTĘPNE GODZINY ({format(selectedDate, "EEEE, d MMMM", { locale: pl })}):
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                      {getHoursForDate(selectedDate).length > 0 ? (
-                        getHoursForDate(selectedDate).map((hour) => (
+                      {availableHoursForSelectedDate.length > 0 ? (
+                        availableHoursForSelectedDate.map((hour) => (
                           <button
                             key={hour}
                             type="button"
@@ -190,7 +253,7 @@ const BookingForm = () => {
                         ))
                       ) : (
                         <p className="col-span-full text-center py-12 text-muted-foreground italic">
-                          Brak dostępnych godzin w tym dniu.
+                          Brak dostępnych godzin w tym dniu dla wybranej liczby godzin.
                         </p>
                       )}
                     </div>
@@ -265,7 +328,10 @@ const BookingForm = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="number_of_hours">Ilość godzin</Label>
-                    <Select value={numberOfHours} onValueChange={setNumberOfHours}>
+                    <Select value={numberOfHours} onValueChange={(value) => {
+                      setNumberOfHours(value);
+                      setSelectedHour(null); // Reset selected hour when number of hours changes
+                    }}>
                       <SelectTrigger className="rounded-xl h-12">
                         <SelectValue placeholder="Wybierz ilość godzin" />
                       </SelectTrigger>
