@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds } from "date-fns";
+import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ const BookingForm = () => {
   const [loading, setLoading] = useState(false);
   const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfToday());
   
   const [formData, setFormData] = useState({
     service: 'recording',
@@ -39,10 +40,9 @@ const BookingForm = () => {
     instagram: '',
   });
 
-  const nextSevenDays = useMemo(() => {
-    const today = startOfToday();
-    return Array.from({ length: 7 }, (_, i) => addDays(today, i));
-  }, []);
+  const displayedDates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+  }, [currentWeekStart]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -109,12 +109,18 @@ const BookingForm = () => {
     const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
     const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy dostępność dla pojedynczej godziny
 
-    // 1. Sprawdź dostępność w grafiku administratora dla tej godziny
+    // 1. Sprawdź, czy godzina nie jest w przeszłości
+    const now = new Date();
+    if (isBefore(bookingStart, now)) {
+      return false;
+    }
+
+    // 2. Sprawdź dostępność w grafiku administratora dla tej godziny
     if (!isHourAvailableInAdminSchedule(bookingStart, startHour)) {
       return false;
     }
 
-    // 2. Sprawdź kolizje z istniejącymi rezerwacjami dla tej pojedynczej godziny
+    // 3. Sprawdź kolizje z istniejącymi rezerwacjami dla tej pojedynczej godziny
     if (hasBookingCollision(bookingStart, bookingEnd)) {
       return false;
     }
@@ -143,6 +149,12 @@ const BookingForm = () => {
         }
         // Sprawdź kolizje z istniejącymi rezerwacjami dla każdej godziny w zakresie
         if (hasBookingCollision(currentCheckTime, currentSegmentEnd)) {
+          possible = false;
+          break;
+        }
+        // Sprawdź, czy godzina nie jest w przeszłości
+        const now = new Date();
+        if (isBefore(currentCheckTime, now)) {
           possible = false;
           break;
         }
@@ -262,6 +274,20 @@ const BookingForm = () => {
     return "godzin";
   };
 
+  const goToPreviousWeek = () => {
+    setCurrentWeekStart(prev => addDays(prev, -7));
+    setSelectedDate(null);
+    setSelectedHour(null);
+    setNumberOfHours('1');
+  };
+
+  const goToNextWeek = () => {
+    setCurrentWeekStart(prev => addDays(prev, 7));
+    setSelectedDate(null);
+    setSelectedHour(null);
+    setNumberOfHours('1');
+  };
+
   return (
     <section id="booking" className="py-24 bg-secondary/10">
       <div className="container mx-auto px-4">
@@ -281,23 +307,36 @@ const BookingForm = () => {
                   <h3 className="text-xl font-bold">1. Wybierz termin</h3>
                 </div>
 
+                <div className="flex justify-between items-center mb-4">
+                  <Button variant="outline" onClick={goToPreviousWeek} className="rounded-full h-10 px-4" disabled={isToday(currentWeekStart)}>
+                    <ArrowLeft /> Poprzedni tydzień
+                  </Button>
+                  <span className="text-lg font-semibold text-gray-accent">
+                    {format(currentWeekStart, 'dd.MM.yyyy', { locale: pl })} - {format(addDays(currentWeekStart, 6), 'dd.MM.yyyy', { locale: pl })}
+                  </span>
+                  <Button variant="outline" onClick={goToNextWeek} className="rounded-full h-10 px-4">
+                    Następny tydzień <ArrowRight />
+                  </Button>
+                </div>
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
-                  {nextSevenDays.map((date) => {
+                  {displayedDates.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
                     const dayHasAvailableHours = hasAnyTrulyAvailableHoursForDay(date);
+                    const isPastDay = isBefore(date, startOfToday());
                     
                     return (
                       <button
                         key={date.toString()}
                         type="button"
-                        disabled={!dayHasAvailableHours} // Wyłączamy przycisk dnia, jeśli nie ma żadnych dostępnych godzin
+                        disabled={!dayHasAvailableHours || isPastDay}
                         onClick={() => handleDateSelect(date)}
                         className={cn(
                           "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
                           isSelected 
                             ? "border-gray-accent bg-gray-accent/5 scale-105" 
                             : "border-transparent bg-secondary/30 hover:bg-secondary/50",
-                          !dayHasAvailableHours && "opacity-30 cursor-not-allowed grayscale"
+                          (!dayHasAvailableHours || isPastDay) && "opacity-30 cursor-not-allowed grayscale"
                         )}
                       >
                         <span className="text-xs font-bold uppercase text-muted-foreground mb-1">
