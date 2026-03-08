@@ -22,7 +22,7 @@ const dayMap: Record<number, string> = {
   6: "Sobota"
 };
 
-const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"]; // Przeniesiono definicję days tutaj
+const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 
 const BookingForm = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -58,12 +58,10 @@ const BookingForm = () => {
       console.error("Błąd pobierania dostępności:", error);
     } else {
       const formatted: Record<string, string[]> = {};
-      // Initialize all days with empty arrays
-      days.forEach(day => { // 'days' jest teraz dostępne
+      days.forEach(day => {
         formatted[day] = [];
       });
       
-      // Fill with data from DB
       if (data) {
         data.forEach((curr: any) => {
           formatted[curr.day_name] = curr.hours;
@@ -86,7 +84,7 @@ const BookingForm = () => {
     const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
     return allPossibleHours.filter(startHour => {
-      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0), 0);
+      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
       const bookingEnd = addHours(bookingStart, hoursCount);
 
       // 1. Sprawdź dostępność w grafiku administratora dla każdej godziny w ramach rezerwacji
@@ -203,7 +201,6 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    // Sprawdzamy, czy dla danej daty istnieją jakiekolwiek dostępne godziny dla wybranej liczby godzin
                     const hasHours = getAvailableHours(date, parseInt(numberOfHours)).length > 0;
                     
                     return (
