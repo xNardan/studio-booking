@@ -34,31 +34,31 @@ const BookingPage = () => {
         <BookingForm />
       </main>
       
-      <footer className="bg-black text-white py-12 border-t border-gray-800">
+      <footer className="bg-card text-foreground py-12 border-t border-border">
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
           <div className="text-left">
-            <h4 className="text-lg font-bold mb-4 text-gray-400">ADRES</h4>
-            <p className="text-gray-300 text-base">Al. Jana Pawła II 11</p>
-            <p className="text-gray-300 text-base">21-500 Biała Podlaska</p>
+            <h4 className="text-lg font-bold mb-4 text-muted-foreground">ADRES</h4>
+            <p className="text-base">Al. Jana Pawła II 11</p>
+            <p className="text-base">21-500 Biała Podlaska</p>
           </div>
           <div className="text-left">
-            <h4 className="text-lg font-bold mb-4 text-gray-400">KONTAKT</h4>
-            <p className="text-gray-300 text-base">@flowstudio.bp</p>
-            <p className="text-gray-300 text-base">flowstudiobp@gmail.com</p>
+            <h4 className="text-lg font-bold mb-4 text-muted-foreground">KONTAKT</h4>
+            <p className="text-base">@flowstudio.bp</p>
+            <p className="text-base">flowstudiobp@gmail.com</p>
           </div>
           <div className="text-right">
             <a 
               href="https://www.google.com/maps/search/Al.+Jana+Paw%C5%82a+II+11,+21-500+Bia%C5%82a+Podlaska" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 text-white rounded-full hover:bg-gray-700 transition-colors text-base"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-colors text-base"
             >
               <MapPin size={20} /> Znajdź nas na Google
             </a>
           </div>
         </div>
-        <div className="container mx-auto px-4 text-center mt-8 pt-8 border-t border-gray-800">
-          <p className="text-gray-500 text-sm">© 2024 Flow Studio. Wszelkie prawa zastrzeżone.</p>
+        <div className="container mx-auto px-4 text-center mt-8 pt-8 border-t border-border">
+          <p className="text-muted-foreground text-sm">© 2024 Flow Studio. Wszelkie prawa zastrzeżone.</p>
         </div>
       </footer>
     </div>
