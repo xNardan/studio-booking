@@ -8,6 +8,9 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
+import { DatePicker } from '@/components/DatePicker'; // Import DatePicker
+import { format, startOfWeek, addWeeks, subWeeks, getDay } from 'date-fns';
+import { pl } from 'date-fns/locale'; // Importuj polską lokalizację
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`); // 00:00 - 23:00
@@ -16,34 +19,47 @@ const AdminAvailability = () => {
   const [availability, setAvailability] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Domyślnie dzisiejsza data
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchAvailability();
-  }, []);
+    if (selectedDate) {
+      fetchAvailability(selectedDate);
+    }
+  }, [selectedDate]);
 
-  const fetchAvailability = async () => {
+  const getWeekStartDate = (date: Date) => {
+    // startOfWeek w date-fns domyślnie zaczyna od niedzieli.
+    // Aby zacząć od poniedziałku, używamy { weekStartsOn: 1 }.
+    return format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  };
+
+  const fetchAvailability = async (date: Date) => {
+    setLoading(true);
+    const weekStartDate = getWeekStartDate(date);
     try {
       const { data, error } = await supabase
-        .from('availability')
-        .select('*');
+        .from('weekly_availability') // Nowa tabela do przechowywania tygodniowej dostępności
+        .select('*')
+        .eq('week_start_date', weekStartDate);
       
       if (error) throw error;
 
       const formatted: Record<string, string[]> = {};
-      // Inicjalizujemy puste dni
       days.forEach(day => formatted[day] = []);
       
-      // Wypełniamy danymi z bazy
-      if (data) {
-        data.forEach((curr: any) => {
-          formatted[curr.day_name] = curr.hours;
-        });
+      if (data && data.length > 0) {
+        const weeklyData = data[0].availability_data; // Zakładamy, że availability_data to JSONB
+        for (const day of days) {
+          if (weeklyData[day]) {
+            formatted[day] = weeklyData[day];
+          }
+        }
       }
       
       setAvailability(formatted);
     } catch (error: any) {
-      showError("Błąd pobierania: " + error.message);
+      showError("Błąd pobierania dostępności: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -61,16 +77,22 @@ const AdminAvailability = () => {
   };
 
   const handleSave = async () => {
+    if (!selectedDate) {
+      showError("Wybierz datę, aby zapisać dostępność.");
+      return;
+    }
     setSaving(true);
+    const weekStartDate = getWeekStartDate(selectedDate);
     try {
-      const updates = Object.entries(availability).map(([day, hrs]) => ({
-        day_name: day,
-        hours: hrs
-      }));
-
       const { error } = await supabase
-        .from('availability')
-        .upsert(updates, { onConflict: 'day_name' });
+        .from('weekly_availability')
+        .upsert(
+          {
+            week_start_date: weekStartDate,
+            availability_data: availability // Zapisujemy cały obiekt jako JSONB
+          },
+          { onConflict: 'week_start_date' }
+        );
 
       if (error) throw error;
       showSuccess("Harmonogram został zapisany!");
@@ -84,6 +106,24 @@ const AdminAvailability = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
+  };
+
+  const goToPreviousWeek = () => {
+    if (selectedDate) {
+      setSelectedDate(subWeeks(selectedDate, 1));
+    }
+  };
+
+  const goToNextWeek = () => {
+    if (selectedDate) {
+      setSelectedDate(addWeeks(selectedDate, 1));
+    }
+  };
+
+  const getWeekRange = (date: Date) => {
+    const start = startOfWeek(date, { weekStartsOn: 1 });
+    const end = addWeeks(start, 1); // Koniec tygodnia to początek następnego
+    return `${format(start, 'dd.MM.yyyy', { locale: pl })} - ${format(subWeeks(end, 0), 'dd.MM.yyyy', { locale: pl })}`;
   };
 
   if (loading) {
@@ -103,7 +143,7 @@ const AdminAvailability = () => {
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <CalendarIcon className="text-gray-accent" /> Panel Realizatora
             </h1>
-            <p className="text-muted-foreground">Zaznacz godziny, w których jesteś dostępny.</p>
+            <p className="text-muted-foreground">Zaznacz godziny, w których jesteś dostępny dla wybranego tygodnia.</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link to="/admin/bookings">
@@ -119,6 +159,23 @@ const AdminAvailability = () => {
               {saving ? "Zapisywanie..." : "Zapisz zmiany"}
             </Button>
           </div>
+        </div>
+
+        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={goToPreviousWeek} className="rounded-full h-12 px-4">
+              < Poprzedni tydzień
+            </Button>
+            <DatePicker date={selectedDate} setDate={setSelectedDate} />
+            <Button variant="outline" onClick={goToNextWeek} className="rounded-full h-12 px-4">
+              Następny tydzień >
+            </Button>
+          </div>
+          {selectedDate && (
+            <p className="text-lg font-semibold text-gray-accent">
+              Tydzień: {getWeekRange(selectedDate)}
+            </p>
+          )}
         </div>
 
         <div className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-xl">
