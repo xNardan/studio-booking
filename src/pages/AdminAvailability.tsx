@@ -98,15 +98,15 @@ const AdminAvailability = () => {
         return { ...prev, [day]: Array.from(newDayHours).sort() };
       } else {
         // Start a new range selection or toggle a single hour
-        setSelectionStart({ day, hour });
-        if (dayHours.includes(hour) && !selectionStart) {
-          // If clicking an already selected hour without an active selection, deselect it
+        // If clicking an already selected hour without an active selection, deselect it
+        if (dayHours.includes(hour)) {
+          setSelectionStart(null); // Clear selection start if we're just toggling a single hour off
           return { ...prev, [day]: dayHours.filter(h => h !== hour).sort() };
-        } else if (!dayHours.includes(hour) && !selectionStart) {
-          // If clicking an unselected hour without an active selection, select it
+        } else {
+          // If clicking an unselected hour, start a new selection
+          setSelectionStart({ day, hour });
           return { ...prev, [day]: [...dayHours, hour].sort() };
         }
-        return prev; // If selectionStart is active but on a different day, do nothing yet
       }
     });
   }, [selectionStart]);
@@ -243,7 +243,6 @@ const AdminAvailability = () => {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-secondary/50">
-                  <th className="p-4 text-left border-b border-border font-bold">Godzina</th>
                   {days.map((day, index) => (
                     <th key={day} className="p-4 text-center border-b border-border font-bold min-w-[120px]">
                       <div>{day}</div>
@@ -255,7 +254,6 @@ const AdminAvailability = () => {
               <tbody>
                 {hours.map(hour => (
                   <tr key={hour} className="hover:bg-secondary/20 transition-colors">
-                    <td className="p-4 border-b border-border font-medium text-sm">{hour}</td>
                     {days.map(day => {
                       const isSelected = isHourSelected(day, hour);
                       const inRange = isHourInRange(day, hour);
