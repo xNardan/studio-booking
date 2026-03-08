@@ -25,11 +25,12 @@ const dayMap: Record<number, string> = {
 const BookingForm = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
+  const [numberOfHours, setNumberOfHours] = useState<string>('1'); // Nowy stan dla ilości godzin
   const [loading, setLoading] = useState(false);
   const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
   
   const [formData, setFormData] = useState({
-    service: 'recording', // Ustawiam domyślną usługę, ponieważ pole wyboru usługi zostało usunięte
+    service: 'recording',
     name: '',
     email: '',
     instagram: ''
@@ -68,7 +69,7 @@ const BookingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram) {
+    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !numberOfHours) {
       showError("Proszę wypełnić wszystkie pola.");
       return;
     }
@@ -82,28 +83,28 @@ const BookingForm = () => {
           service: formData.service,
           customer_name: formData.name,
           customer_email: formData.email,
-          customer_instagram: formData.instagram, // Dodaję pole instagram
+          customer_instagram: formData.instagram,
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
-          booking_hour: selectedHour
+          booking_hour: selectedHour,
+          number_of_hours: parseInt(numberOfHours) // Dodaję ilość godzin
         });
 
       if (insertError) {
-        // Handle unique constraint violation (double booking)
         if (insertError.code === '23505') {
           throw new Error("Przepraszamy, ten termin został właśnie zarezerwowany przez kogoś innego.");
         }
-        // Handle trigger exception (not in availability)
         if (insertError.code === 'P0001') {
           throw new Error(insertError.message);
         }
         throw insertError;
       }
 
-      showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour}`);
+      showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour} na ${numberOfHours} godzin.`);
       
       setSelectedDate(null);
       setSelectedHour(null);
-      setFormData({ service: 'recording', name: '', email: '', instagram: '' }); // Resetuję formularz
+      setNumberOfHours('1'); // Resetuję ilość godzin
+      setFormData({ service: 'recording', name: '', email: '', instagram: '' });
       
     } catch (error: any) {
       showError(error.message || "Wystąpił błąd podczas rezerwacji.");
@@ -215,8 +216,6 @@ const BookingForm = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Usługa - usunięta, domyślna wartość 'recording' */}
-
                   <div className="space-y-2">
                     <Label htmlFor="name">Imię / Pseudonim</Label>
                     <div className="relative">
@@ -264,6 +263,22 @@ const BookingForm = () => {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="number_of_hours">Ilość godzin</Label>
+                    <Select value={numberOfHours} onValueChange={setNumberOfHours}>
+                      <SelectTrigger className="rounded-xl h-12">
+                        <SelectValue placeholder="Wybierz ilość godzin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 godzina</SelectItem>
+                        <SelectItem value="2">2 godziny</SelectItem>
+                        <SelectItem value="3">3 godziny</SelectItem>
+                        <SelectItem value="4">4 godziny</SelectItem>
+                        <SelectItem value="5">5 godzin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="pt-4">
                     <div className="bg-secondary/50 p-4 rounded-2xl mb-4 text-sm">
                       <div className="flex justify-between mb-1">
@@ -273,6 +288,10 @@ const BookingForm = () => {
                             ? `${format(selectedDate, "dd.MM")} @ ${selectedHour}` 
                             : "Nie wybrano"}
                         </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Ilość godzin:</span>
+                        <span className="font-bold">{numberOfHours}</span>
                       </div>
                     </div>
                     <Button 
