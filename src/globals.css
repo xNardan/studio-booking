@@ -38,32 +38,32 @@
   }
 
   .dark {
-    --background: 0 0% 0%; /* Czarne tło */
+    --background: 0 0% 5%; /* Bardzo ciemne tło */
     --foreground: 0 0% 98%; /* Jasny tekst */
 
-    --card: 0 0% 5%; /* Bardzo ciemne karty */
+    --card: 0 0% 8%; /* Ciemniejsze karty */
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 5%;
+    --popover: 0 0% 8%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 45 100% 50%; /* Żółty akcent */
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 0 0% 10%; /* Drugorzędne tło */
+    --secondary: 0 0% 12%; /* Drugorzędne tło */
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 270 10% 60%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%; /* Ciemniejszy muted-foreground */
 
-    --accent: 0 0% 10%;
+    --accent: 0 0% 12%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 20%; /* Ciemniejsza ramka */
-    --input: 0 0% 10%;
+    --border: 0 0% 15%; /* Ciemniejsza ramka */
+    --input: 0 0% 12%;
     --ring: 45 100% 50%; /* Żółty ring */
 
     --yellow: 45 100% 50%; /* Nowy kolor żółty */
