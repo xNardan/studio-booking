@@ -154,9 +154,10 @@ const AdminAvailability = () => {
               </table>
             </div>
           </div>
-        </main>
-      </div>
-    );
-  };
+        </div>
+      </main>
+    </div>
+  );
+};
 
 export default AdminAvailability;
