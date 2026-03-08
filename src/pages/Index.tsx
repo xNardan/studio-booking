@@ -99,6 +99,7 @@ const Index = () => {
                     <li>KRK Rokit 5</li>
                     <li>Beyerdynamic DT 770 Pro 80Ohm</li>
                     <li>Superlux HD-660 Pro 150 Ohm</li>
+                    <li>Beyerdynamic DT 990 Pro 250 Ohm</li>
                   </ul>
                 </CardContent>
               </Card>
