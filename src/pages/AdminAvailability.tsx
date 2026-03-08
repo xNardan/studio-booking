@@ -27,7 +27,7 @@ const AdminAvailability = () => {
       .select('*');
     
     if (error) {
-      showError("Nie udało się pobrać danych");
+      showError("Nie udało się pobrać danych: " + error.message);
     } else if (data) {
       const formatted = data.reduce((acc: any, curr: any) => {
         acc[curr.day_name] = curr.hours;
@@ -51,6 +51,16 @@ const AdminAvailability = () => {
 
   const handleSave = async () => {
     setLoading(true);
+    
+    // Double check session before attempting save
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      showError("Sesja wygasła. Zaloguj się ponownie.");
+      navigate('/login');
+      setLoading(false);
+      return;
+    }
+
     const updates = Object.entries(availability).map(([day, hrs]) => ({
       day_name: day,
       hours: hrs
@@ -61,7 +71,12 @@ const AdminAvailability = () => {
       .upsert(updates, { onConflict: 'day_name' });
 
     if (error) {
-      showError("Błąd zapisu: " + error.message);
+      // If RLS is working, unauthorized attempts will fail with code 42501
+      if (error.code === '42501') {
+        showError("Brak uprawnień do zapisu. Skonfiguruj RLS w Supabase.");
+      } else {
+        showError("Błąd zapisu: " + error.message);
+      }
     } else {
       showSuccess("Harmonogram został zapisany!");
     }
