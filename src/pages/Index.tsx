@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { MapPin, Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -263,7 +262,6 @@ const Index = () => {
             <a href="#" className="hover:text-primary transition-colors">YouTube</a>
           </div>
         </div>
-        <MadeWithDyad />
       </footer>
     </div>
   );
