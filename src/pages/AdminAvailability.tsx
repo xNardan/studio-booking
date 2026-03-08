@@ -5,16 +5,17 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccess, showError } from '@/utils/toast';
-import { Save, Calendar as CalendarIcon, LogOut } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, LogOut, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
-const hours = Array.from({ length: 24 }, (_, i) => `${String(i + 1).padStart(2, '0')}:00`);
+const hours = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`); // 08:00 - 22:00
 
 const AdminAvailability = () => {
   const [availability, setAvailability] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,20 +23,30 @@ const AdminAvailability = () => {
   }, []);
 
   const fetchAvailability = async () => {
-    const { data, error } = await supabase
-      .from('availability')
-      .select('*');
-    
-    if (error) {
-      showError("Nie udało się pobrać danych: " + error.message);
-    } else if (data) {
-      const formatted = data.reduce((acc: any, curr: any) => {
-        acc[curr.day_name] = curr.hours;
-        return acc;
-      }, {});
+    try {
+      const { data, error } = await supabase
+        .from('availability')
+        .select('*');
+      
+      if (error) throw error;
+
+      const formatted: Record<string, string[]> = {};
+      // Inicjalizujemy puste dni
+      days.forEach(day => formatted[day] = []);
+      
+      // Wypełniamy danymi z bazy
+      if (data) {
+        data.forEach((curr: any) => {
+          formatted[curr.day_name] = curr.hours;
+        });
+      }
+      
       setAvailability(formatted);
+    } catch (error: any) {
+      showError("Błąd pobierania: " + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const toggleHour = (day: string, hour: string) => {
@@ -50,42 +61,38 @@ const AdminAvailability = () => {
   };
 
   const handleSave = async () => {
-    setLoading(true);
-    
-    // Use getUser() for secure server-side verification before saving
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      showError("Sesja wygasła. Zaloguj się ponownie.");
-      navigate('/login');
-      setLoading(false);
-      return;
-    }
+    setSaving(true);
+    try {
+      const updates = Object.entries(availability).map(([day, hrs]) => ({
+        day_name: day,
+        hours: hrs
+      }));
 
-    const updates = Object.entries(availability).map(([day, hrs]) => ({
-      day_name: day,
-      hours: hrs
-    }));
+      const { error } = await supabase
+        .from('availability')
+        .upsert(updates, { onConflict: 'day_name' });
 
-    const { error } = await supabase
-      .from('availability')
-      .upsert(updates, { onConflict: 'day_name' });
-
-    if (error) {
-      if (error.code === '42501') {
-        showError("Brak uprawnień do zapisu. Skonfiguruj RLS w Supabase.");
-      } else {
-        showError("Błąd zapisu: " + error.message);
-      }
-    } else {
+      if (error) throw error;
       showSuccess("Harmonogram został zapisany!");
+    } catch (error: any) {
+      showError("Błąd zapisu: " + error.message);
+    } finally {
+      setSaving(false);
     }
-    setLoading(false);
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary w-12 h-12" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,8 +109,9 @@ const AdminAvailability = () => {
             <Button variant="outline" onClick={handleLogout} className="rounded-full px-6 h-12 gap-2">
               <LogOut size={18} /> Wyloguj
             </Button>
-            <Button onClick={handleSave} className="rounded-full px-8 h-12 gap-2" disabled={loading}>
-              <Save size={18} /> {loading ? "Zapisywanie..." : "Zapisz zmiany"}
+            <Button onClick={handleSave} className="rounded-full px-8 h-12 gap-2" disabled={saving}>
+              {saving ? <Loader2 className="animate-spin w-5 h-5" /> : <Save size={18} />}
+              {saving ? "Zapisywanie..." : "Zapisz zmiany"}
             </Button>
           </div>
         </div>
