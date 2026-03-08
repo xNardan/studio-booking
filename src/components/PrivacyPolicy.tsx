@@ -21,7 +21,7 @@ const PrivacyPolicy = () => {
 
         <div className="prose dark:prose-invert max-w-none">
           <p>
-            Niniejsza Polityka Prywatności określa zasady gromadzenia, przetwarzania i wykorzystywania danych osobowych pozyskanych od Państwa przez Flow Studio, prowadzone przez [Twoja Nazwa Firmy/Imię i Nazwisko], z siedzibą w [Twój Adres], za pośrednictwem strony internetowej [Adres Strony Internetowej].
+            Niniejsza Polityka Prywatności określa zasady gromadzenia, przetwarzania i wykorzystywania danych osobowych pozyskanych od Państwa przez Flow Studio, prowadzone przez FlowStudioBp, z siedzibą w Jana Pawła II 11, za pośrednictwem strony internetowej www.flowstudiobp.pl.
           </p>
           <p>
             Dokładamy wszelkich starań, aby zapewnić poszanowanie Państwa prywatności i ochronę przekazanych nam danych osobowych podczas korzystania z naszej strony internetowej oraz usług.
@@ -29,7 +29,7 @@ const PrivacyPolicy = () => {
 
           <h2>1. Administrator Danych Osobowych</h2>
           <p>
-            Administratorem Państwa danych osobowych jest Flow Studio, [Twoja Nazwa Firmy/Imię i Nazwisko], [Twój Adres], [Twój NIP/REGON].
+            Administratorem Państwa danych osobowych jest Flow Studio, FlowStudioBp, Jana Pawła II 11.
           </p>
 
           <h2>2. Rodzaje Gromadzonych Danych</h2>
