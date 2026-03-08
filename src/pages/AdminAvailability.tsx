@@ -89,7 +89,7 @@ const AdminAvailability = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-primary w-12 h-12" />
+        <Loader2 className="animate-spin text-yellow w-12 h-12" />
       </div>
     );
   }
@@ -101,7 +101,7 @@ const AdminAvailability = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
-              <CalendarIcon className="text-primary" /> Panel Realizatora
+              <CalendarIcon className="text-yellow" /> Panel Realizatora
             </h1>
             <p className="text-muted-foreground">Zaznacz godziny, w których jesteś dostępny.</p>
           </div>

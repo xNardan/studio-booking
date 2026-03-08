@@ -47,8 +47,8 @@
     --popover: 0 0% 8%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 45 100% 50%; /* Żółty akcent */
-    --primary-foreground: 0 0% 98%; /* Biały tekst na akcencie */
+    --primary: 0 0% 20%; /* Szary kolor dla przycisków */
+    --primary-foreground: 0 0% 98%; /* Biały tekst na przyciskach */
 
     --secondary: 0 0% 12%; /* Drugorzędne tło */
     --secondary-foreground: 0 0% 98%;

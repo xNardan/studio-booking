@@ -129,8 +129,8 @@ const BookingForm = () => {
             <div className="lg:col-span-2 space-y-8">
               <div className="bg-card border border-border rounded-[2.5rem] p-6 md:p-8 shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <CalendarIcon className="text-primary w-5 h-5" />
+                  <div className="w-10 h-10 bg-yellow/10 rounded-full flex items-center justify-center">
+                    <CalendarIcon className="text-yellow w-5 h-5" />
                   </div>
                   <h3 className="text-xl font-bold">1. Wybierz termin</h3>
                 </div>
@@ -152,7 +152,7 @@ const BookingForm = () => {
                         className={cn(
                           "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
                           isSelected 
-                            ? "border-primary bg-primary/5 scale-105" 
+                            ? "border-yellow bg-yellow/5 scale-105" 
                             : "border-transparent bg-secondary/30 hover:bg-secondary/50",
                           !hasHours && "opacity-30 cursor-not-allowed grayscale"
                         )}
@@ -184,8 +184,8 @@ const BookingForm = () => {
                             className={cn(
                               "py-3 px-2 rounded-xl text-sm font-bold transition-all border-2",
                               selectedHour === hour
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background border-border hover:border-primary/50"
+                                ? "bg-yellow text-primary-foreground border-yellow"
+                                : "bg-background border-border hover:border-yellow/50"
                             )}
                           >
                             {hour}
@@ -212,8 +212,8 @@ const BookingForm = () => {
             )}>
               <div className="bg-card border border-border rounded-[2.5rem] p-6 md:p-8 shadow-xl sticky top-24">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <User className="text-primary w-5 h-5" />
+                  <div className="w-10 h-10 bg-yellow/10 rounded-full flex items-center justify-center">
+                    <User className="text-yellow w-5 h-5" />
                   </div>
                   <h3 className="text-xl font-bold">2. Twoje dane</h3>
                 </div>
@@ -309,8 +309,7 @@ const BookingForm = () => {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
   );
 };
 

@@ -22,7 +22,7 @@ const Hero = () => {
         <p className="text-lg md:text-xl mb-8">
           Twoje brzmienie, nasza pasja.
         </p>
-        <Link to="/rezerwacja" className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform inline-flex items-center justify-center gap-2">
+        <Link to="/rezerwacja" className="bg-yellow text-primary-foreground px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform inline-flex items-center justify-center gap-2">
           Zarezerwuj sesję
         </Link>
       </div>

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 
 const BookingPage = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
+    <div className="min-h-screen bg-background text-foreground selection:bg-yellow/30">
       <Navbar />
       <main className="pt-24 pb-12">
         <div className="container mx-auto px-4 mb-8">
@@ -23,7 +23,7 @@ const BookingPage = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4">
-              Zarezerwuj swoją <span className="text-primary">sesję</span>
+              Zarezerwuj swoją <span className="text-yellow">sesję</span>
             </h1>
             <p className="text-lg text-muted-foreground">
               Wybierz usługę, datę i godzinę. Nasz system automatycznie sprawdzi dostępność realizatora.
