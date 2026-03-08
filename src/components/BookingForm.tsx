@@ -37,7 +37,7 @@ const BookingForm = () => {
     name: '',
     email: '',
     instagram: '',
-    phone: ''
+    // Usunięto pole 'phone'
   });
 
   const nextSevenDays = useMemo(() => {
@@ -180,7 +180,8 @@ const BookingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !formData.phone || !numberOfHours) {
+    // Usunięto walidację dla formData.phone
+    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !numberOfHours) {
       showError("Proszę wypełnić wszystkie pola.");
       return;
     }
@@ -195,7 +196,7 @@ const BookingForm = () => {
           customer_name: formData.name,
           customer_email: formData.email,
           customer_instagram: formData.instagram,
-          customer_phone: formData.phone,
+          // Usunięto customer_phone
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_hour: selectedHour,
           number_of_hours: parseInt(numberOfHours)
@@ -216,7 +217,7 @@ const BookingForm = () => {
       setSelectedDate(null);
       setSelectedHour(null);
       setNumberOfHours('1');
-      setFormData({ service: 'recording', name: '', email: '', instagram: '', phone: '' });
+      setFormData({ service: 'recording', name: '', email: '', instagram: '' }); // Usunięto phone z resetowania formularza
       fetchExistingBookings(); 
       
     } catch (error: any) {
@@ -236,7 +237,6 @@ const BookingForm = () => {
     return getMaxBookableHours(selectedDate, selectedHour);
   }, [selectedDate, selectedHour, dbAvailability, existingBookings]);
 
-  // Funkcja pomocnicza do poprawnej odmiany słowa "godzina"
   const formatHoursPlural = (count: number) => {
     if (count === 1) {
       return "godzina";
@@ -381,21 +381,7 @@ const BookingForm = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Numer telefonu</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        id="phone" 
-                        type="tel" 
-                        placeholder="Twój numer telefonu" 
-                        className="pl-10 rounded-xl h-12" 
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required 
-                      />
-                    </div>
-                  </div>
+                  {/* Usunięto pole na numer telefonu */}
 
                   <div className="space-y-2">
                     <Label htmlFor="instagram">Instagram</Label>
