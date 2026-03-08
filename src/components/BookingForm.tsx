@@ -72,20 +72,18 @@ const BookingForm = () => {
     }
   };
 
-  const getAvailableHoursForDate = (date: Date) => {
+  // Nowa funkcja pomocnicza do sprawdzania dostępnych godzin dla danej daty i liczby godzin
+  const getAvailableHours = (date: Date, hoursCount: number) => {
     const dayName = dayMap[getDay(date)];
     const availableHoursToday = dbAvailability[dayName] || [];
     const nextDayName = dayMap[getDay(addDays(date, 1))];
     const availableHoursNextDay = dbAvailability[nextDayName] || [];
 
-    // Generujemy wszystkie możliwe godziny od 00:00 do 23:00
     const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-
-    const numHours = parseInt(numberOfHours);
 
     return allPossibleHours.filter(hour => {
       const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(hour.split(':')[0])), 0), 0), 0);
-      const bookingEnd = addHours(bookingStart, numHours);
+      const bookingEnd = addHours(bookingStart, hoursCount);
 
       // Sprawdź, czy godzina rozpoczęcia jest dostępna w wybranym dniu
       if (!availableHoursToday.includes(hour)) {
@@ -93,7 +91,7 @@ const BookingForm = () => {
       }
 
       // Sprawdź dostępność dla każdej godziny w ramach rezerwacji
-      for (let i = 0; i < numHours; i++) {
+      for (let i = 0; i < hoursCount; i++) {
         const currentCheckHour = addHours(bookingStart, i);
         const currentCheckHourFormatted = format(currentCheckHour, 'HH:00');
         const currentCheckDay = getDay(currentCheckHour);
@@ -115,7 +113,7 @@ const BookingForm = () => {
         format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
       );
       const nextDayBookings = existingBookings.filter(booking => 
-        format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(addDays(date, 1), 'yyyy-MM-dd')
+        format(parseISO(booking.booking.booking_date), 'yyyy-MM-dd') === format(addDays(date, 1), 'yyyy-MM-dd')
       );
       const allRelevantBookings = [...currentDayBookings, ...nextDayBookings];
 
@@ -188,7 +186,7 @@ const BookingForm = () => {
 
   const availableHoursForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
-    return getAvailableHoursForDate(selectedDate);
+    return getAvailableHours(selectedDate, parseInt(numberOfHours));
   }, [selectedDate, dbAvailability, existingBookings, numberOfHours]);
 
   return (
@@ -213,7 +211,8 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    const hasHours = getAvailableHoursForDate(date).length > 0;
+                    // Sprawdzamy, czy dla danej daty istnieją jakiekolwiek dostępne godziny dla wybranej liczby godzin
+                    const hasHours = getAvailableHours(date, parseInt(numberOfHours)).length > 0;
                     
                     return (
                       <button
