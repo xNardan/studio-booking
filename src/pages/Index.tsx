@@ -277,7 +277,7 @@ const Index = () => {
           </div>
         </div>
         <div className="container mx-auto px-4 text-center mt-8 pt-8 border-t border-border">
-          <p className="text-muted-foreground text-sm">© 2024 Flow Studio. Wszelkie prawa zastrzeżone.</p>
+          <p className="text-muted-foreground text-sm">© 2026 Flow Studio. Wszelkie prawa zastrzeżone.</p>
         </div>
       </footer>
     </div>
