@@ -36,17 +36,25 @@ const Index = () => {
       return;
     }
 
-    // Symulacja wysyłania danych
     try {
-      // Tutaj w przyszłości można dodać logikę wysyłania danych do API
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Symulacja opóźnienia sieci
+      const response = await fetch('https://lusuraonlijbjnvxihzt.supabase.co/functions/v1/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactForm),
+      });
 
-      console.log("Wiadomość do wysłania:", contactForm);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Wystąpił błąd podczas wysyłania wiadomości.");
+      }
+
       showSuccess("Twoja wiadomość została wysłana!");
       setContactForm({ name: '', email: '', message: '' }); // Wyczyszczenie formularza
-    } catch (error) {
+    } catch (error: any) {
       console.error("Błąd wysyłania wiadomości:", error);
-      showError("Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
+      showError(error.message || "Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
     } finally {
       setLoadingContact(false);
     }
