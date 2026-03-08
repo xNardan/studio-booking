@@ -78,20 +78,13 @@ const BookingForm = () => {
     const nextDayName = dayMap[getDay(addDays(date, 1))];
     const availableHoursNextDay = dbAvailability[nextDayName] || [];
 
-    if (!selectedDate) return [];
+    // Generujemy wszystkie możliwe godziny od 00:00 do 23:00
+    const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
-    const currentDayBookings = existingBookings.filter(booking => 
-      format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-    );
-    const nextDayBookings = existingBookings.filter(booking => 
-      format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(addDays(selectedDate, 1), 'yyyy-MM-dd')
-    );
-
-    const allPossibleHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`); // 00:00 - 23:00
+    const numHours = parseInt(numberOfHours);
 
     return allPossibleHours.filter(hour => {
-      const numHours = parseInt(numberOfHours);
-      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(selectedDate, parseInt(hour.split(':')[0])), 0), 0), 0);
+      const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(hour.split(':')[0])), 0), 0), 0);
       const bookingEnd = addHours(bookingStart, numHours);
 
       // Sprawdź, czy godzina rozpoczęcia jest dostępna w wybranym dniu
@@ -102,11 +95,11 @@ const BookingForm = () => {
       // Sprawdź dostępność dla każdej godziny w ramach rezerwacji
       for (let i = 0; i < numHours; i++) {
         const currentCheckHour = addHours(bookingStart, i);
-        const currentCheckDayName = dayMap[getDay(currentCheckHour)];
         const currentCheckHourFormatted = format(currentCheckHour, 'HH:00');
+        const currentCheckDay = getDay(currentCheckHour);
 
         // Jeśli rezerwacja przechodzi na następny dzień
-        if (isAfter(currentCheckHour, setHours(selectedDate, 23))) { // Jeśli godzina jest po 23:00 w wybranym dniu
+        if (currentCheckDay !== getDay(date)) { // Jeśli dzień się zmienił
           if (!availableHoursNextDay.includes(currentCheckHourFormatted)) {
             return false;
           }
@@ -118,13 +111,20 @@ const BookingForm = () => {
       }
 
       // Sprawdź kolizje z istniejącymi rezerwacjami
+      const currentDayBookings = existingBookings.filter(booking => 
+        format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+      );
+      const nextDayBookings = existingBookings.filter(booking => 
+        format(parseISO(booking.booking_date), 'yyyy-MM-dd') === format(addDays(date, 1), 'yyyy-MM-dd')
+      );
       const allRelevantBookings = [...currentDayBookings, ...nextDayBookings];
+
       for (const existingBooking of allRelevantBookings) {
-        const existingStart = parseISO(format(parseISO(existingBooking.booking_date), 'yyyy-MM-dd') + 'T' + existingBooking.booking_hour + ':00');
+        const existingStart = setMilliseconds(setSeconds(setMinutes(setHours(parseISO(existingBooking.booking_date), parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
         const existingEnd = addHours(existingStart, existingBooking.number_of_hours);
 
         if (
-          (isBefore(bookingStart, existingEnd) && isBefore(existingStart, bookingEnd))
+          (isBefore(bookingStart, existingEnd) && isAfter(bookingEnd, existingStart))
         ) {
           return false;
         }
