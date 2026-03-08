@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { showSuccess, showError } from '@/utils/toast';
 import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { DatePicker } from '@/components/DatePicker';
 import { format, startOfWeek, addWeeks, subWeeks, getDay, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { cn } from '@/lib/utils'; // Importujemy cn do łączenia klas Tailwind
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
 const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
@@ -262,14 +262,21 @@ const AdminAvailability = () => {
                       const isStart = selectionStart?.day === day && selectionStart?.hour === hour;
 
                       return (
-                        <td key={`${day}-${hour}`} className="p-4 border-b border-border text-center">
-                          <div className="flex justify-center">
-                            <Checkbox 
-                              checked={isSelected}
-                              onCheckedChange={() => handleHourClick(day, hour)}
-                              className={`w-6 h-6 rounded-md ${inRange ? 'bg-blue-200 border-blue-500' : ''} ${isStart ? 'border-2 border-blue-700' : ''}`}
-                            />
-                          </div>
+                        <td key={`${day}-${hour}`} className="p-1 border-b border-border text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleHourClick(day, hour)}
+                            className={cn(
+                              "w-full h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-colors",
+                              isSelected
+                                ? "bg-gray-accent text-primary-foreground"
+                                : "bg-secondary/50 text-muted-foreground hover:bg-secondary",
+                              inRange && !isSelected && "bg-blue-100 text-blue-800", // Styl dla godzin w zakresie, ale jeszcze nie zaznaczonych
+                              isStart && "ring-2 ring-blue-500 ring-offset-2" // Styl dla godziny początkowej
+                            )}
+                          >
+                            {hour}
+                          </button>
                         </td>
                       );
                     })}
