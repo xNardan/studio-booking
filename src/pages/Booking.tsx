@@ -3,7 +3,6 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import BookingForm from '@/components/BookingForm';
-import { MadeWithDyad } from "@/components/made-with-dyad";
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,6 @@ const BookingPage = () => {
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground mb-4">© 2024 Flow Studio. Wszystkie prawa zastrzeżone.</p>
         </div>
-        <MadeWithDyad />
       </footer>
     </div>
   );
