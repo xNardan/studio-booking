@@ -37,7 +37,7 @@ const BookingForm = () => {
     name: '',
     email: '',
     instagram: '',
-    phone: '' // Dodano pole na numer telefonu
+    phone: ''
   });
 
   const nextSevenDays = useMemo(() => {
@@ -85,14 +85,12 @@ const BookingForm = () => {
     }
   };
 
-  // Funkcja pomocnicza do sprawdzania dostępności pojedynczej godziny
   const isHourAvailable = (checkDate: Date, checkHour: string) => {
     const checkDayName = dayMap[getDay(checkDate)];
     const dayAvailability = dbAvailability[checkDayName];
     return dayAvailability && dayAvailability.includes(checkHour);
   };
 
-  // Funkcja pomocnicza do sprawdzania kolizji z istniejącymi rezerwacjami
   const hasCollision = (potentialBookingStart: Date, potentialBookingEnd: Date) => {
     return existingBookings.some(existingBooking => {
       const existingBookingDate = parseISO(existingBooking.booking_date);
@@ -112,17 +110,15 @@ const BookingForm = () => {
 
     return allPossibleHours.filter(startHour => {
       const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-      const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy tylko 1 godzinę na początek
+      const bookingEnd = addHours(bookingStart, 1);
 
       console.log(`[BookingForm] Checking startHour: ${startHour}, bookingStart: ${bookingStart}, bookingEnd: ${bookingEnd}`);
 
-      // Sprawdź dostępność w grafiku administratora dla tej godziny
       if (!isHourAvailable(bookingStart, startHour)) {
         console.log(`[BookingForm]   REJECTED: ${startHour} because it's not available in admin schedule.`);
         return false;
       }
 
-      // Sprawdź kolizje z istniejącymi rezerwacjami dla tej godziny
       if (hasCollision(bookingStart, bookingEnd)) {
         console.log(`[BookingForm] REJECTED: ${startHour} due to collision with existing booking.`);
         return false;
@@ -149,7 +145,6 @@ const BookingForm = () => {
           possible = false;
           break;
         }
-        // Sprawdź kolizje dla każdej godziny w ramach rezerwacji
         const currentSegmentEnd = addHours(currentCheckTime, 1);
         if (hasCollision(currentCheckTime, currentSegmentEnd)) {
           possible = false;
@@ -200,7 +195,7 @@ const BookingForm = () => {
           customer_name: formData.name,
           customer_email: formData.email,
           customer_instagram: formData.instagram,
-          customer_phone: formData.phone, // Dodano numer telefonu
+          customer_phone: formData.phone,
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_hour: selectedHour,
           number_of_hours: parseInt(numberOfHours)
@@ -221,7 +216,7 @@ const BookingForm = () => {
       setSelectedDate(null);
       setSelectedHour(null);
       setNumberOfHours('1');
-      setFormData({ service: 'recording', name: '', email: '', instagram: '', phone: '' }); // Wyczyszczenie pola telefonu
+      setFormData({ service: 'recording', name: '', email: '', instagram: '', phone: '' });
       fetchExistingBookings(); 
       
     } catch (error: any) {
@@ -240,6 +235,20 @@ const BookingForm = () => {
     if (!selectedDate || !selectedHour) return 0;
     return getMaxBookableHours(selectedDate, selectedHour);
   }, [selectedDate, selectedHour, dbAvailability, existingBookings]);
+
+  // Funkcja pomocnicza do poprawnej odmiany słowa "godzina"
+  const formatHoursPlural = (count: number) => {
+    if (count === 1) {
+      return "godzina";
+    }
+    const lastDigit = count % 10;
+    const lastTwoDigits = count % 100;
+
+    if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
+      return "godziny";
+    }
+    return "godzin";
+  };
 
   return (
     <section id="booking" className="py-24 bg-secondary/10">
@@ -373,7 +382,7 @@ const BookingForm = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Numer telefonu</Label> {/* Dodano pole na numer telefonu */}
+                    <Label htmlFor="phone">Numer telefonu</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
                       <Input 
@@ -413,7 +422,7 @@ const BookingForm = () => {
                       <SelectContent>
                         {Array.from({ length: maxBookableHours }, (_, i) => i + 1).map(hourNum => (
                           <SelectItem key={hourNum} value={String(hourNum)}>
-                            {hourNum} godzina{hourNum > 1 && hourNum < 5 ? 'y' : (hourNum >= 5 ? 'in' : '')}
+                            {hourNum} {formatHoursPlural(hourNum)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -432,7 +441,7 @@ const BookingForm = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Ilość godzin:</span>
-                        <span className="font-bold">{numberOfHours}</span>
+                        <span className="font-bold">{numberOfHours} {formatHoursPlural(parseInt(numberOfHours))}</span>
                       </div>
                     </div>
                     <Button 
