@@ -1,24 +1,13 @@
 "use client";
 
 import React from 'react';
-import { Play, ArrowDown } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://via.placeholder.com/1920x1080" // Zastąp to swoim obrazem
-          alt="Studio Background"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black opacity-50"></div> {/* Overlay dla lepszej czytelności tekstu */}
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 text-white">
+    <section className="pt-32 pb-16 md:pt-48 md:pb-32 overflow-hidden">
+      <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between max-w-5xl mx-auto text-center md:text-left">
           <div className="md:w-1/2 mb-10 md:mb-0">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-bold mb-6 animate-fade-in">
@@ -44,14 +33,6 @@ const Hero = () => {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Scroll Down Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
-        <a href="#services" className="flex flex-col items-center text-white hover:text-yellow transition-colors">
-          <ArrowDown className="w-8 h-8 animate-bounce" />
-          <span className="text-sm mt-2">Scroll Down</span>
-        </a>
       </div>
     </section>
   );
