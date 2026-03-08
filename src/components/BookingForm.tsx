@@ -100,6 +100,15 @@ const BookingForm = () => {
 
         // Sprawdzamy, czy istniejąca rezerwacja nakłada się na naszą potencjalną rezerwację
         // Używamy isBefore i isAfter, aby sprawdzić, czy interwały się przecinają
+        // Dodatkowo sprawdzamy, czy daty są takie same, aby uniknąć kolizji z rezerwacjami z innych dni
+        const isSameDay = format(bookingStart, 'yyyy-MM-dd') === format(existingBookingStart, 'yyyy-MM-dd');
+        const isNextDay = format(addDays(bookingStart, 1), 'yyyy-MM-dd') === format(existingBookingStart, 'yyyy-MM-dd');
+
+
+        if (!isSameDay && !isNextDay) {
+          return false; // Rezerwacja jest z innego dnia, nie koliduje
+        }
+
         return (
           (isBefore(bookingStart, existingBookingEnd) && isAfter(bookingEnd, existingBookingStart)) ||
           (bookingStart.getTime() === existingBookingStart.getTime() && bookingEnd.getTime() === existingBookingEnd.getTime())
