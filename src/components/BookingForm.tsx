@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Phone, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format, addDays, startOfToday, getDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { showSuccess, showError } from "@/utils/toast";
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const dayMap: Record<number, string> = {
   1: "Poniedziałek",
@@ -29,10 +29,10 @@ const BookingForm = () => {
   const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
   
   const [formData, setFormData] = useState({
-    service: '',
+    service: 'recording', // Ustawiam domyślną usługę, ponieważ pole wyboru usługi zostało usunięte
     name: '',
     email: '',
-    phone: ''
+    instagram: ''
   });
 
   const nextSevenDays = useMemo(() => {
@@ -66,13 +66,9 @@ const BookingForm = () => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleServiceChange = (value: string) => {
-    setFormData(prev => ({ ...prev, service: value }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.phone) {
+    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram) {
       showError("Proszę wypełnić wszystkie pola.");
       return;
     }
@@ -86,7 +82,7 @@ const BookingForm = () => {
           service: formData.service,
           customer_name: formData.name,
           customer_email: formData.email,
-          customer_phone: formData.phone,
+          customer_instagram: formData.instagram, // Dodaję pole instagram
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_hour: selectedHour
         });
@@ -107,7 +103,7 @@ const BookingForm = () => {
       
       setSelectedDate(null);
       setSelectedHour(null);
-      setFormData({ service: '', name: '', email: '', phone: '' });
+      setFormData({ service: 'recording', name: '', email: '', instagram: '' }); // Resetuję formularz
       
     } catch (error: any) {
       showError(error.message || "Wystąpił błąd podczas rezerwacji.");
@@ -219,20 +215,7 @@ const BookingForm = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="service">Usługa</Label>
-                    <Select value={formData.service} onValueChange={handleServiceChange} required>
-                      <SelectTrigger className="rounded-xl h-12">
-                        <SelectValue placeholder="Wybierz usługę" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="recording">Nagrywanie wokalu</SelectItem>
-                        <SelectItem value="mixing">Miks i Mastering</SelectItem>
-                        <SelectItem value="production">Produkcja muzyczna</SelectItem>
-                        <SelectItem value="podcast">Podcast</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Usługa - usunięta, domyślna wartość 'recording' */}
 
                   <div className="space-y-2">
                     <Label htmlFor="name">Imię / Pseudonim</Label>
@@ -266,15 +249,15 @@ const BookingForm = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefon</Label>
+                    <Label htmlFor="instagram">Instagram</Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Instagram className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
                       <Input 
-                        id="phone" 
-                        type="tel" 
-                        placeholder="+48 000 000 000" 
+                        id="instagram" 
+                        type="text" 
+                        placeholder="@twoj_instagram" 
                         className="pl-10 rounded-xl h-12" 
-                        value={formData.phone}
+                        value={formData.instagram}
                         onChange={handleInputChange}
                         required 
                       />
@@ -309,8 +292,7 @@ const BookingForm = () => {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
   );
 };
 
