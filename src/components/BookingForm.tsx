@@ -270,20 +270,23 @@ const BookingForm = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
                   {nextSevenDays.map((date) => {
                     const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    const hasAnyAvailableHours = allPossibleHoursForSelectedDate.some(h => h.isAvailable);
+                    // Sprawdzamy, czy dla danego dnia są jakiekolwiek godziny, które są truly available
+                    const hasAnyTrulyAvailableHours = allPossibleHoursForSelectedDate.filter(item => 
+                      format(selectedDate || new Date(), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') ? item.isAvailable : isHourTrulyAvailable(date, item.hour)
+                    ).length > 0;
                     
                     return (
                       <button
                         key={date.toString()}
                         type="button"
-                        disabled={!hasAnyAvailableHours}
+                        disabled={!hasAnyTrulyAvailableHours} // Wyłączamy przycisk dnia, jeśli nie ma żadnych dostępnych godzin
                         onClick={() => handleDateSelect(date)}
                         className={cn(
                           "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
                           isSelected 
                             ? "border-gray-accent bg-gray-accent/5 scale-105" 
                             : "border-transparent bg-secondary/30 hover:bg-secondary/50",
-                          !hasAnyAvailableHours && "opacity-30 cursor-not-allowed grayscale"
+                          !hasAnyTrulyAvailableHours && "opacity-30 cursor-not-allowed grayscale"
                         )}
                       >
                         <span className="text-xs font-bold uppercase text-muted-foreground mb-1">
