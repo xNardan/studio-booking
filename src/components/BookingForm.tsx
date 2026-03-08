@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Phone, Check, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { User, Mail, Phone, Check, Calendar as CalendarIcon, Clock, AlertCircle } from 'lucide-react';
 import { format, addDays, startOfToday, getDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,14 @@ const BookingForm = () => {
   const [loading, setLoading] = useState(false);
   const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
   
+  // Form states
+  const [formData, setFormData] = useState({
+    service: '',
+    name: '',
+    email: '',
+    phone: ''
+  });
+
   // Generujemy listę najbliższych 7 dni
   const nextSevenDays = useMemo(() => {
     const today = startOfToday();
@@ -55,18 +63,68 @@ const BookingForm = () => {
     return dbAvailability[dayName] || [];
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleServiceChange = (value: string) => {
+    setFormData(prev => ({ ...prev, service: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedHour) return;
+    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.phone) {
+      showError("Proszę wypełnić wszystkie pola.");
+      return;
+    }
     
     setLoading(true);
-    // Symulacja zapisu
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      // 1. Verify if the slot is still available in the 'availability' table (Logic check)
+      const dayName = dayMap[getDay(selectedDate)];
+      const { data: availData } = await supabase
+        .from('availability')
+        .select('hours')
+        .eq('day_name', dayName)
+        .single();
+
+      if (!availData || !availData.hours.includes(selectedHour)) {
+        throw new Error("Przepraszamy, ten termin nie jest już dostępny.");
+      }
+
+      // 2. Insert the booking
+      const { error: insertError } = await supabase
+        .from('bookings')
+        .insert({
+          service: formData.service,
+          customer_name: formData.name,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          booking_date: format(selectedDate, 'yyyy-MM-dd'),
+          booking_hour: selectedHour
+        });
+
+      if (insertError) {
+        if (insertError.code === '23505') { // Unique constraint violation
+          throw new Error("Ten termin został właśnie zarezerwowany przez kogoś innego.");
+        }
+        throw insertError;
+      }
+
       showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour}`);
+      
+      // Reset form
       setSelectedDate(null);
       setSelectedHour(null);
-    }, 1500);
+      setFormData({ service: '', name: '', email: '', phone: '' });
+      
+    } catch (error: any) {
+      showError(error.message || "Wystąpił błąd podczas rezerwacji.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,6 +155,8 @@ const BookingForm = () => {
                     return (
                       <button
                         key={date.toString()}
+                        type="button"
+                        disabled={!hasHours}
                         onClick={() => {
                           setSelectedDate(date);
                           setSelectedHour(null);
@@ -106,7 +166,7 @@ const BookingForm = () => {
                           isSelected 
                             ? "border-primary bg-primary/5 scale-105" 
                             : "border-transparent bg-secondary/30 hover:bg-secondary/50",
-                          !hasHours && "opacity-50 cursor-not-allowed"
+                          !hasHours && "opacity-30 cursor-not-allowed grayscale"
                         )}
                       >
                         <span className="text-xs font-bold uppercase text-muted-foreground mb-1">
@@ -131,6 +191,7 @@ const BookingForm = () => {
                         getHoursForDate(selectedDate).map((hour) => (
                           <button
                             key={hour}
+                            type="button"
                             onClick={() => setSelectedHour(hour)}
                             className={cn(
                               "py-3 px-2 rounded-xl text-sm font-bold transition-all border-2",
@@ -173,7 +234,7 @@ const BookingForm = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="service">Usługa</Label>
-                    <Select required>
+                    <Select value={formData.service} onValueChange={handleServiceChange} required>
                       <SelectTrigger className="rounded-xl h-12">
                         <SelectValue placeholder="Wybierz usługę" />
                       </SelectTrigger>
@@ -190,7 +251,14 @@ const BookingForm = () => {
                     <Label htmlFor="name">Imię / Pseudonim</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input id="name" placeholder="Twoje imię" className="pl-10 rounded-xl h-12" required />
+                      <Input 
+                        id="name" 
+                        placeholder="Twoje imię" 
+                        className="pl-10 rounded-xl h-12" 
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                   </div>
 
@@ -198,7 +266,15 @@ const BookingForm = () => {
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input id="email" type="email" placeholder="twoj@email.com" className="pl-10 rounded-xl h-12" required />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="twoj@email.com" 
+                        className="pl-10 rounded-xl h-12" 
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                   </div>
 
@@ -206,7 +282,15 @@ const BookingForm = () => {
                     <Label htmlFor="phone">Telefon</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input id="phone" type="tel" placeholder="+48 000 000 000" className="pl-10 rounded-xl h-12" required />
+                      <Input 
+                        id="phone" 
+                        type="tel" 
+                        placeholder="+48 000 000 000" 
+                        className="pl-10 rounded-xl h-12" 
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                   </div>
 
@@ -226,7 +310,11 @@ const BookingForm = () => {
                       className="w-full h-14 rounded-2xl text-lg font-bold" 
                       disabled={loading || !selectedDate || !selectedHour}
                     >
-                      {loading ? "Wysyłanie..." : "Potwierdź rezerwację"}
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <Clock className="animate-spin w-5 h-5" /> Przetwarzanie...
+                        </span>
+                      ) : "Potwierdź rezerwację"}
                     </Button>
                   </div>
                 </form>
