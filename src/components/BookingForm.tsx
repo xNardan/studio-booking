@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Phone, Check, Calendar as CalendarIcon, Clock, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format, addDays, startOfToday, getDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ const BookingForm = () => {
   const [loading, setLoading] = useState(false);
   const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
   
-  // Form states
   const [formData, setFormData] = useState({
     service: '',
     name: '',
@@ -36,7 +35,6 @@ const BookingForm = () => {
     phone: ''
   });
 
-  // Generujemy listę najbliższych 7 dni
   const nextSevenDays = useMemo(() => {
     const today = startOfToday();
     return Array.from({ length: 7 }, (_, i) => addDays(today, i));
@@ -82,19 +80,6 @@ const BookingForm = () => {
     setLoading(true);
 
     try {
-      // 1. Verify if the slot is still available in the 'availability' table (Logic check)
-      const dayName = dayMap[getDay(selectedDate)];
-      const { data: availData } = await supabase
-        .from('availability')
-        .select('hours')
-        .eq('day_name', dayName)
-        .single();
-
-      if (!availData || !availData.hours.includes(selectedHour)) {
-        throw new Error("Przepraszamy, ten termin nie jest już dostępny.");
-      }
-
-      // 2. Insert the booking
       const { error: insertError } = await supabase
         .from('bookings')
         .insert({
@@ -107,15 +92,19 @@ const BookingForm = () => {
         });
 
       if (insertError) {
-        if (insertError.code === '23505') { // Unique constraint violation
-          throw new Error("Ten termin został właśnie zarezerwowany przez kogoś innego.");
+        // Handle unique constraint violation (double booking)
+        if (insertError.code === '23505') {
+          throw new Error("Przepraszamy, ten termin został właśnie zarezerwowany przez kogoś innego.");
+        }
+        // Handle trigger exception (not in availability)
+        if (insertError.code === 'P0001') {
+          throw new Error(insertError.message);
         }
         throw insertError;
       }
 
       showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour}`);
       
-      // Reset form
       setSelectedDate(null);
       setSelectedHour(null);
       setFormData({ service: '', name: '', email: '', phone: '' });
@@ -137,7 +126,6 @@ const BookingForm = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* KROK 1: Wybór daty i godziny */}
             <div className="lg:col-span-2 space-y-8">
               <div className="bg-card border border-border rounded-[2.5rem] p-6 md:p-8 shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
@@ -218,7 +206,6 @@ const BookingForm = () => {
               </div>
             </div>
 
-            {/* KROK 2: Formularz danych */}
             <div className={cn(
               "transition-all duration-500",
               (!selectedDate || !selectedHour) ? "opacity-50 pointer-events-none grayscale" : "opacity-100"
