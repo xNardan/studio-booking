@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { showError, showSuccess } from '@/utils/toast';
-import { Music } from 'lucide-react';
+import logo from '@/assets/flowstudiologo.png'; // Import logo
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -37,7 +37,7 @@ const Login = () => {
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
             <div className="bg-primary p-3 rounded-2xl">
-              <Music className="text-primary-foreground w-8 h-8" />
+              <img src={logo} alt="Flow Studio Logo" className="w-8 h-8 text-primary-foreground" /> {/* Użycie logo */}
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Panel Realizatora</CardTitle>
