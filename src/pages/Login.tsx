@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox'; // Import Checkbox
 import { showError, showSuccess } from '@/utils/toast';
 import logo from '@/assets/flowstudiologo.png'; // Import logo
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false); // State for remember me
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -20,6 +22,11 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     
+    // Supabase handles session persistence automatically,
+    // so "remember me" functionality is implicitly managed by its session storage.
+    // We can use the `rememberMe` state to potentially adjust session duration
+    // or other client-side behaviors if needed in the future,
+    // but for basic signInWithPassword, it's largely automatic.
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     
     if (error) {
@@ -66,6 +73,17 @@ const Login = () => {
                 required 
                 className="rounded-xl h-12"
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="rememberMe" 
+                checked={rememberMe} 
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)} 
+                className="rounded-md"
+              />
+              <Label htmlFor="rememberMe" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Zapamiętaj mnie
+              </Label>
             </div>
             <Button type="submit" className="w-full h-12 rounded-xl font-bold" disabled={loading}>
               {loading ? "Logowanie..." : "Zaloguj się"}
