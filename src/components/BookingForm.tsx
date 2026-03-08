@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight } from 'lucide-react'; // Dodano ArrowLeft i ArrowRight
-import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday } from "date-fns";
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,26 +50,37 @@ const BookingForm = () => {
       await fetchExistingBookings();
     };
     fetchData();
-  }, []);
+  }, [currentWeekStart]); // Dodano currentWeekStart jako zależność
+
+  const getWeekStartDate = (date: Date) => {
+    return startOfWeek(date, { weekStartsOn: 1 });
+  };
 
   const fetchAvailability = async () => {
-    console.log("[BookingForm] Fetching availability...");
-    const { data, error } = await supabase.from('availability').select('*');
-    if (error) {
-      console.error("[BookingForm] Błąd pobierania dostępności:", error);
-    } else {
+    console.log("[BookingForm] Fetching availability for week:", format(currentWeekStart, 'yyyy-MM-dd'));
+    const weekStartDateFormatted = format(getWeekStartDate(currentWeekStart), 'yyyy-MM-dd');
+    const { data, error } = await supabase
+      .from('weekly_availability')
+      .select('availability_data')
+      .eq('week_start_date', weekStartDateFormatted)
+      .single(); // Używamy single, bo oczekujemy jednego rekordu dla danego tygodnia
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 oznacza brak danych (no rows found)
+      console.error("[BookingForm] Błąd pobierania dostępności tygodniowej:", error);
+      showError("Błąd pobierania dostępności tygodniowej.");
+    } else if (data) {
       const formatted: Record<string, string[]> = {};
       days.forEach(day => {
-        formatted[day] = [];
+        formatted[day] = data.availability_data[day] || [];
       });
-      
-      if (data) {
-        data.forEach((curr: any) => {
-          formatted[curr.day_name] = curr.hours;
-        });
-      }
       setDbAvailability(formatted);
-      console.log("[BookingForm] Fetched availability:", formatted);
+      console.log("[BookingForm] Fetched weekly availability:", formatted);
+    } else {
+      // Brak danych dla tego tygodnia, ustawiamy pustą dostępność
+      const emptyAvailability: Record<string, string[]> = {};
+      days.forEach(day => emptyAvailability[day] = []);
+      setDbAvailability(emptyAvailability);
+      console.log("[BookingForm] No weekly availability found for this week.");
     }
   };
 
