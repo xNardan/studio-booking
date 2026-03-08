@@ -15,6 +15,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
+        console.log("ProtectedRoute: No user found", authError);
         navigate('/login');
         setLoading(false);
         return;
@@ -27,10 +28,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         .eq('id', user.id)
         .single();
 
-      if (profileError || profile?.role !== 'admin') {
-        console.error("Access denied: User is not an admin", profileError);
+      if (profileError) {
+        console.error("ProtectedRoute: Error fetching profile", profileError);
+        showError("Błąd weryfikacji profilu. Spróbuj zalogować się ponownie.");
         await supabase.auth.signOut();
+        navigate('/login');
+      } else if (profile?.role !== 'admin') {
+        console.warn(`ProtectedRoute: Access denied. User role is: ${profile?.role}`);
         showError("Brak uprawnień administratora.");
+        await supabase.auth.signOut();
         navigate('/login');
       } else {
         setAuthenticated(true);
