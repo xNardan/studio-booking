@@ -152,8 +152,13 @@ const BookingForm = () => {
 
       if (error) throw error;
       showSuccess("Zarezerwowano!");
+      
+      // Resetowanie formularza
       setSelectedDate(null);
       setSelectedHour(null);
+      setNumberOfHours('1');
+      setFormData({ name: '', email: '', instagram: '' });
+      
       fetchExistingBookings();
     } catch (error: any) {
       showError(error.message);
