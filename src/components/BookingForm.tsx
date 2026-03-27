@@ -126,6 +126,7 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const adminId = selectedDate && selectedHour ? getEngineerForSlot(selectedDate, selectedHour) : null;
+    const engineerName = adminId ? admins[adminId] : 'Realizator';
     
     if (!selectedDate || !selectedHour || !adminId || !formData.name || !formData.email) {
       showError("Wypełnij wszystkie pola.");
@@ -139,7 +140,8 @@ const BookingForm = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase.from('bookings').insert({
+      // 1. Zapisz w bazie danych
+      const { error: dbError } = await supabase.from('bookings').insert({
         service: 'recording',
         customer_name: formData.name,
         customer_email: formData.email,
@@ -150,8 +152,40 @@ const BookingForm = () => {
         admin_id: adminId
       });
 
-      if (error) throw error;
-      showSuccess("Zarezerwowano!");
+      if (dbError) throw dbError;
+
+      // 2. Wyślij powiadomienie e-mail
+      const emailMessage = `
+        Zarezerwowano nową sesję nagraniową!
+        
+        SZCZEGÓŁY SESJI:
+        Data: ${format(selectedDate, 'dd.MM.yyyy')} (${dayMap[getDay(selectedDate)]})
+        Godzina: ${selectedHour}
+        Czas trwania: ${numberOfHours}h
+        Realizator: ${engineerName}
+        
+        DANE KLIENTA:
+        Imię/Pseudonim: ${formData.name}
+        Email: ${formData.email}
+        Instagram: ${formData.instagram || 'Nie podano'}
+      `;
+
+      try {
+        await fetch('https://lusuraonlijbjnvxihzt.supabase.co/functions/v1/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            message: emailMessage
+          }),
+        });
+      } catch (emailErr) {
+        console.error("Błąd wysyłki maila:", emailErr);
+        // Nie przerywamy procesu, jeśli tylko mail zawiódł, ale logujemy błąd
+      }
+
+      showSuccess("Zarezerwowano pomyślnie!");
       
       // Resetowanie formularza
       setSelectedDate(null);
