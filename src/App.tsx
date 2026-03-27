@@ -12,7 +12,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/ThemeProvider";
 import PrivacyPolicy from "./components/PrivacyPolicy";
-import CookieConsent from "./components/CookieConsent"; // Import CookieConsent
+import CookieConsent from "./components/CookieConsent";
+import ScrollToTop from "./components/ScrollToTop"; // Import ScrollToTop
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop /> {/* Dodanie komponentu ScrollToTop */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/rezerwacja" element={<BookingPage />} />
@@ -46,7 +48,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <CookieConsent /> {/* Dodanie komponentu CookieConsent */}
+          <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
