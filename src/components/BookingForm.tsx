@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, ArrowLeft, ArrowRight } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,6 @@ const dayMap: Record<number, string> = {
   0: "Niedziela", 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek", 6: "Sobota"
 };
 
-const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
-
 const BookingForm = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
@@ -28,7 +26,7 @@ const BookingForm = () => {
   const [admins, setAdmins] = useState<Record<string, string>>({});
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfToday());
   
-  const [formData, setFormData] = useState({ service: 'recording', name: '', email: '', instagram: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', instagram: '' });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,7 +95,7 @@ const BookingForm = () => {
     setLoading(true);
     try {
       const { error } = await supabase.from('bookings').insert({
-        service: formData.service,
+        service: 'recording',
         customer_name: formData.name,
         customer_email: formData.email,
         customer_instagram: formData.instagram,
@@ -175,12 +173,57 @@ const BookingForm = () => {
 
           <div className={cn("transition-all", !selectedHour && "opacity-50 pointer-events-none")}>
             <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl sticky top-24">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><User className="text-gray-accent" /> Dane rezerwacji</h3>
+              <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
+                <User className="text-muted-foreground" size={24} /> 2. Twoje dane
+              </h3>
               
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input placeholder="Imię / Pseudonim" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className="rounded-xl h-12" />
-                <Input type="email" placeholder="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="rounded-xl h-12" />
-                <Input placeholder="Instagram" value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} className="rounded-xl h-12" />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold ml-1">Imię / Pseudonim *</Label>
+                  <Input 
+                    value={formData.name} 
+                    onChange={e => setFormData({...formData, name: e.target.value})} 
+                    required 
+                    className="rounded-2xl h-14 bg-secondary/20 border-none focus-visible:ring-gray-accent" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold ml-1">Email *</Label>
+                  <Input 
+                    type="email" 
+                    value={formData.email} 
+                    onChange={e => setFormData({...formData, email: e.target.value})} 
+                    required 
+                    className="rounded-2xl h-14 bg-secondary/20 border-none focus-visible:ring-gray-accent" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold ml-1">Instagram</Label>
+                  <Input 
+                    placeholder="@nick" 
+                    value={formData.instagram} 
+                    onChange={e => setFormData({...formData, instagram: e.target.value})} 
+                    className="rounded-2xl h-14 bg-secondary/20 border-none focus-visible:ring-gray-accent" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold ml-1">Ilość godzin</Label>
+                  <Select value={numberOfHours} onValueChange={setNumberOfHours}>
+                    <SelectTrigger className="rounded-2xl h-14 bg-secondary/20 border-none focus:ring-gray-accent">
+                      <SelectValue placeholder="Wybierz ilość godzin" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-border bg-card">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                        <SelectItem key={num} value={num.toString()} className="rounded-xl">
+                          {num} h
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 
                 <div className="pt-4">
                   {selectedEngineerName && (
@@ -188,7 +231,7 @@ const BookingForm = () => {
                       * Sesja zostanie poprowadzona przez realizatora: <span className="font-bold text-foreground">{selectedEngineerName}</span>
                     </p>
                   )}
-                  <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>
+                  <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-bold text-lg bg-secondary hover:bg-secondary/80 text-foreground transition-all" disabled={loading}>
                     {loading ? "Przetwarzanie..." : "Potwierdź rezerwację"}
                   </Button>
                 </div>
