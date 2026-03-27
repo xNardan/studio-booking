@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight, Headphones } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,7 @@ import { showSuccess, showError } from "@/utils/toast";
 import { supabase } from '@/integrations/supabase/client';
 
 const dayMap: Record<number, string> = {
-  0: "Niedziela",
-  1: "Poniedziałek",
-  2: "Wtorek",
-  3: "Środa",
-  4: "Czwartek",
-  5: "Piątek",
-  6: "Sobota"
+  0: "Niedziela", 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek", 6: "Sobota"
 };
 
 const days = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
@@ -29,483 +23,184 @@ const BookingForm = () => {
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
   const [numberOfHours, setNumberOfHours] = useState<string>('1');
   const [loading, setLoading] = useState(false);
-  const [dbAvailability, setDbAvailability] = useState<Record<string, string[]>>({});
+  const [dbAvailability, setDbAvailability] = useState<Record<string, Record<string, string>>>({});
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<Record<string, string>>({});
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfToday());
   
-  const [formData, setFormData] = useState({
-    service: 'recording',
-    name: '',
-    email: '',
-    instagram: '',
-  });
-
-  const displayedDates = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
-  }, [currentWeekStart]);
+  const [formData, setFormData] = useState({ service: 'recording', name: '', email: '', instagram: '' });
 
   useEffect(() => {
     const fetchData = async () => {
       await fetchAvailability();
       await fetchExistingBookings();
+      await fetchAdmins();
     };
     fetchData();
-  }, [currentWeekStart]); // Dodano currentWeekStart jako zależność
+  }, [currentWeekStart]);
 
-  const getWeekStartDate = (date: Date) => {
-    return startOfWeek(date, { weekStartsOn: 1 });
+  const fetchAdmins = async () => {
+    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'admin');
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach(a => map[a.id] = a.full_name || 'Realizator');
+      setAdmins(map);
+    }
   };
 
   const fetchAvailability = async () => {
-    console.log("[BookingForm] Fetching availability for week:", format(currentWeekStart, 'yyyy-MM-dd'));
-    const weekStartDateFormatted = format(getWeekStartDate(currentWeekStart), 'yyyy-MM-dd');
-    const { data, error } = await supabase
-      .from('weekly_availability')
-      .select('availability_data')
-      .eq('week_start_date', weekStartDateFormatted)
-      .single(); // Używamy single, bo oczekujemy jednego rekordu dla danego tygodnia
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 oznacza brak danych (no rows found)
-      console.error("[BookingForm] Błąd pobierania dostępności tygodniowej:", error);
-      showError("Błąd pobierania dostępności tygodniowej.");
-    } else if (data) {
-      const formatted: Record<string, string[]> = {};
-      days.forEach(day => {
-        formatted[day] = data.availability_data[day] || [];
-      });
-      setDbAvailability(formatted);
-      console.log("[BookingForm] Fetched weekly availability:", formatted);
+    const weekStart = format(startOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const { data } = await supabase.from('weekly_availability').select('availability_data').eq('week_start_date', weekStart).single();
+    if (data) {
+      setDbAvailability(data.availability_data);
     } else {
-      // Brak danych dla tego tygodnia, ustawiamy pustą dostępność
-      const emptyAvailability: Record<string, string[]> = {};
-      days.forEach(day => emptyAvailability[day] = []);
-      setDbAvailability(emptyAvailability);
-      console.log("[BookingForm] No weekly availability found for this week.");
+      setDbAvailability({});
     }
   };
 
   const fetchExistingBookings = async () => {
-    console.log("[BookingForm] Fetching existing bookings...");
-    const { data, error } = await supabase.from('bookings').select('*');
-    if (error) {
-      console.error("[BookingForm] Błąd pobierania istniejących rezerwacji:", error);
-    } else if (data) {
-      setExistingBookings(data);
-      console.log("[BookingForm] Fetched existing bookings:", data);
-    }
+    const { data } = await supabase.from('bookings').select('*');
+    if (data) setExistingBookings(data);
   };
 
-  const isHourAvailableInAdminSchedule = (checkDate: Date, checkHour: string) => {
-    const checkDayName = dayMap[getDay(checkDate)];
-    const dayAvailability = dbAvailability[checkDayName];
-    return dayAvailability && dayAvailability.includes(checkHour);
+  const getEngineerForSlot = (date: Date, hour: string) => {
+    const dayName = dayMap[getDay(date)];
+    return dbAvailability[dayName]?.[hour];
   };
 
-  const hasBookingCollision = (potentialBookingStart: Date, potentialBookingEnd: Date) => {
-    return existingBookings.some(existingBooking => {
-      const existingBookingDate = parseISO(existingBooking.booking_date);
-      const existingBookingStart = setMilliseconds(setSeconds(setMinutes(setHours(existingBookingDate, parseInt(existingBooking.booking_hour.split(':')[0])), 0), 0), 0);
-      const existingBookingEnd = addHours(existingBookingStart, existingBooking.number_of_hours);
+  const isHourTrulyAvailable = (date: Date, hour: string) => {
+    const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(hour.split(':')[0])), 0), 0), 0);
+    if (isBefore(bookingStart, new Date())) return false;
 
-      // Sprawdzenie, czy zakresy czasowe się nakładają
-      return (
-        (isBefore(potentialBookingStart, existingBookingEnd) && isAfter(potentialBookingEnd, existingBookingStart)) ||
-        (potentialBookingStart.getTime() === existingBookingStart.getTime() && potentialBookingEnd.getTime() === existingBookingEnd.getTime()) ||
-        (isBefore(existingBookingStart, potentialBookingEnd) && isAfter(existingBookingEnd, potentialBookingStart))
-      );
+    const adminId = getEngineerForSlot(date, hour);
+    if (!adminId) return false;
+
+    const collision = existingBookings.some(b => {
+      const bDate = parseISO(b.booking_date);
+      const bStart = setHours(bDate, parseInt(b.booking_hour.split(':')[0]));
+      const bEnd = addHours(bStart, b.number_of_hours);
+      return (isBefore(bookingStart, bEnd) && isAfter(addHours(bookingStart, 1), bStart));
     });
-  };
 
-  const isHourTrulyAvailable = (date: Date, startHour: string) => {
-    const bookingStart = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-    const bookingEnd = addHours(bookingStart, 1); // Sprawdzamy dostępność dla pojedynczej godziny
-
-    // 1. Sprawdź, czy godzina nie jest w przeszłości
-    const now = new Date();
-    if (isBefore(bookingStart, now)) {
-      return false;
-    }
-
-    // 2. Sprawdź dostępność w grafiku administratora dla tej godziny
-    if (!isHourAvailableInAdminSchedule(bookingStart, startHour)) {
-      return false;
-    }
-
-    // 3. Sprawdź kolizje z istniejącymi rezerwacjami dla tej pojedynczej godziny
-    if (hasBookingCollision(bookingStart, bookingEnd)) {
-      return false;
-    }
-    
-    return true;
-  };
-
-  const getMaxBookableHours = (date: Date, startHour: string) => {
-    if (!date || !startHour) return 0;
-
-    let maxHours = 0;
-    for (let i = 1; i <= 12; i++) { 
-      const potentialBookingStartSegment = setMilliseconds(setSeconds(setMinutes(setHours(date, parseInt(startHour.split(':')[0])), 0), 0), 0);
-      const potentialBookingEndSegment = addHours(potentialBookingStartSegment, i);
-
-      let possible = true;
-      for (let j = 0; j < i; j++) {
-        const currentCheckTime = addHours(potentialBookingStartSegment, j);
-        const currentCheckHourFormatted = format(currentCheckTime, 'HH:00');
-        const currentSegmentEnd = addHours(currentCheckTime, 1);
-
-        // Sprawdź dostępność w grafiku administratora dla każdej godziny w zakresie
-        if (!isHourAvailableInAdminSchedule(currentCheckTime, currentCheckHourFormatted)) {
-          possible = false;
-          break;
-        }
-        // Sprawdź kolizje z istniejącymi rezerwacjami dla każdej godziny w zakresie
-        if (hasBookingCollision(currentCheckTime, currentSegmentEnd)) {
-          possible = false;
-          break;
-        }
-        // Sprawdź, czy godzina nie jest w przeszłości
-        const now = new Date();
-        if (isBefore(currentCheckTime, now)) {
-          possible = false;
-          break;
-        }
-      }
-
-      if (possible) {
-        maxHours = i;
-      } else {
-        break; 
-      }
-    }
-    console.log(`[BookingForm] Max bookable hours for ${format(date, 'yyyy-MM-dd')} at ${startHour}: ${maxHours}`);
-    return maxHours;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    setSelectedHour(null); 
-    setNumberOfHours('1'); 
-  };
-
-  const handleHourSelect = (hour: string) => {
-    setSelectedHour(hour);
-    setNumberOfHours('1'); 
+    return !collision;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedHour || !formData.service || !formData.name || !formData.email || !formData.instagram || !numberOfHours) {
-      showError("Proszę wypełnić wszystkie pola.");
+    const adminId = selectedDate && selectedHour ? getEngineerForSlot(selectedDate, selectedHour) : null;
+    
+    if (!selectedDate || !selectedHour || !adminId || !formData.name || !formData.email) {
+      showError("Wypełnij wszystkie pola.");
       return;
     }
     
     setLoading(true);
-
     try {
-      const { error: insertError } = await supabase
-        .from('bookings')
-        .insert({
-          service: formData.service,
-          customer_name: formData.name,
-          customer_email: formData.email,
-          customer_instagram: formData.instagram,
-          booking_date: format(selectedDate, 'yyyy-MM-dd'),
-          booking_hour: selectedHour,
-          number_of_hours: parseInt(numberOfHours)
-        });
+      const { error } = await supabase.from('bookings').insert({
+        service: formData.service,
+        customer_name: formData.name,
+        customer_email: formData.email,
+        customer_instagram: formData.instagram,
+        booking_date: format(selectedDate, 'yyyy-MM-dd'),
+        booking_hour: selectedHour,
+        number_of_hours: parseInt(numberOfHours),
+        admin_id: adminId
+      });
 
-      if (insertError) {
-        if (insertError.code === '23505') {
-          throw new Error("Przepraszamy, ten termin został właśnie zarezerwowany przez kogoś innego.");
-        }
-        if (insertError.code === 'P0001') {
-          throw new Error(insertError.message);
-        }
-        throw insertError;
-      }
-
-      showSuccess(`Zarezerwowano termin: ${format(selectedDate, "dd.MM")} o godzinie ${selectedHour} na ${numberOfHours} ${formatHoursPlural(parseInt(numberOfHours))}.`);
-      
+      if (error) throw error;
+      showSuccess("Zarezerwowano!");
       setSelectedDate(null);
       setSelectedHour(null);
-      setNumberOfHours('1');
-      setFormData({ service: 'recording', name: '', email: '', instagram: '' });
-      fetchExistingBookings(); 
-      
+      fetchExistingBookings();
     } catch (error: any) {
-      showError(error.message || "Wystąpił błąd podczas rezerwacji.");
+      showError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const allPossibleHoursForSelectedDate = useMemo(() => {
-    if (!selectedDate) return [];
-    const allHours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-    return allHours.map(hour => ({
-      hour,
-      isAvailable: isHourTrulyAvailable(selectedDate, hour)
-    }));
-  }, [selectedDate, dbAvailability, existingBookings]);
-
-  // Nowa funkcja do sprawdzania, czy dany dzień ma jakiekolwiek dostępne godziny
-  const hasAnyTrulyAvailableHoursForDay = (date: Date) => {
-    const dayName = dayMap[getDay(date)];
-    const adminAvailableHours = dbAvailability[dayName] || [];
-    
-    if (adminAvailableHours.length === 0) {
-      return false; // Jeśli administrator nie ustawił żadnych godzin dla tego dnia, to nie ma dostępnych godzin
-    }
-
-    // Sprawdzamy każdą godzinę, którą administrator ustawił jako dostępną
-    return adminAvailableHours.some(hour => isHourTrulyAvailable(date, hour));
-  };
-
-
-  const maxBookableHours = useMemo(() => {
-    if (!selectedDate || !selectedHour) return 0;
-    return getMaxBookableHours(selectedDate, selectedHour);
-  }, [selectedDate, selectedHour, dbAvailability, existingBookings]);
-
-  const formatHoursPlural = (count: number) => {
-    if (count === 1) {
-      return "godzina";
-    }
-    const lastDigit = count % 10;
-    const lastTwoDigits = count % 100;
-
-    if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
-      return "godziny";
-    }
-    return "godzin";
-  };
-
-  const goToPreviousWeek = () => {
-    setCurrentWeekStart(prev => addDays(prev, -7));
-    setSelectedDate(null);
-    setSelectedHour(null);
-    setNumberOfHours('1');
-  };
-
-  const goToNextWeek = () => {
-    setCurrentWeekStart(prev => addDays(prev, 7));
-    setSelectedDate(null);
-    setSelectedHour(null);
-    setNumberOfHours('1');
-  };
+  const selectedEngineerName = selectedDate && selectedHour ? admins[getEngineerForSlot(selectedDate, selectedHour) || ''] : null;
 
   return (
     <section id="booking" className="py-24 bg-secondary/10">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Zarezerwuj sesję</h2>
-            <p className="text-muted-foreground text-lg">Wybierz dogodny termin z naszego grafiku.</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <div className="bg-card border border-border rounded-[2.5rem] p-6 md:p-8 shadow-xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gray-accent/10 rounded-full flex items-center justify-center">
-                    <CalendarIcon className="text-gray-accent w-5 h-5" />
-                  </div>
-                  <h3 className="text-xl font-bold">1. Wybierz termin</h3>
-                </div>
-
-                <div className="flex justify-between items-center mb-4">
-                  <Button variant="outline" onClick={goToPreviousWeek} className="rounded-full h-10 px-4" disabled={isToday(currentWeekStart)}>
-                    <ArrowLeft /> Poprzedni tydzień
-                  </Button>
-                  <span className="text-lg font-semibold text-gray-accent">
-                    {format(currentWeekStart, 'dd.MM.yyyy', { locale: pl })} - {format(addDays(currentWeekStart, 6), 'dd.MM.yyyy', { locale: pl })}
-                  </span>
-                  <Button variant="outline" onClick={goToNextWeek} className="rounded-full h-10 px-4">
-                    Następny tydzień <ArrowRight />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 mb-8">
-                  {displayedDates.map((date) => {
-                    const isSelected = selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-                    const dayHasAvailableHours = hasAnyTrulyAvailableHoursForDay(date);
-                    const isPastDay = isBefore(date, startOfToday());
-                    
-                    return (
-                      <button
-                        key={date.toString()}
-                        type="button"
-                        disabled={!dayHasAvailableHours || isPastDay}
-                        onClick={() => handleDateSelect(date)}
-                        className={cn(
-                          "flex flex-col items-center p-4 rounded-2xl border-2 transition-all",
-                          isSelected 
-                            ? "border-gray-accent bg-gray-accent/5 scale-105" 
-                            : "border-transparent bg-secondary/30 hover:bg-secondary/50",
-                          (!dayHasAvailableHours || isPastDay) && "opacity-30 cursor-not-allowed grayscale"
-                        )}
-                      >
-                        <span className="text-xs font-bold uppercase text-muted-foreground mb-1">
-                          {format(date, "EEE", { locale: pl })}
-                        </span>
-                        <span className="text-xl font-extrabold">
-                          {format(date, "d")}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {selectedDate ? (
-                  <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="flex items-center gap-2 mb-4 text-sm font-bold text-muted-foreground">
-                      <Clock size={16} />
-                      DOSTĘPNE GODZINY ({format(selectedDate, "EEEE, d MMMM", { locale: pl })}):
-                    </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                      {allPossibleHoursForSelectedDate.length > 0 ? (
-                        allPossibleHoursForSelectedDate.map(({ hour, isAvailable }) => (
-                          <button
-                            key={hour}
-                            type="button"
-                            disabled={!isAvailable}
-                            onClick={() => handleHourSelect(hour)}
-                            className={cn(
-                              "py-3 px-2 rounded-xl text-sm font-bold transition-all border-2",
-                              selectedHour === hour
-                                ? "bg-gray-accent text-primary-foreground border-gray-accent"
-                                : "bg-background border-border hover:border-gray-accent/50",
-                              !isAvailable && "opacity-30 cursor-not-allowed bg-secondary/30 border-border"
-                            )}
-                          >
-                            {hour}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="col-span-full text-center py-12 text-muted-foreground italic">
-                          Brak dostępnych godzin w tym dniu.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 border-2 border-dashed border-border rounded-3xl">
-                    <p className="text-muted-foreground">Wybierz dzień powyżej, aby zobaczyć godziny.</p>
-                  </div>
-                )}
-              </div>
+      <div className="container mx-auto px-4 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-card border border-border rounded-[2.5rem] p-8 shadow-xl">
+            <div className="flex justify-between items-center mb-8">
+              <Button variant="outline" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, -7))} disabled={isToday(currentWeekStart)} className="rounded-full"><ArrowLeft /></Button>
+              <span className="font-bold text-gray-accent">{format(currentWeekStart, 'dd.MM')} - {format(addDays(currentWeekStart, 6), 'dd.MM')}</span>
+              <Button variant="outline" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))} className="rounded-full"><ArrowRight /></Button>
             </div>
 
-            <div className={cn(
-              "transition-all duration-500",
-              (!selectedDate || !selectedHour) ? "opacity-50 pointer-events-none grayscale" : "opacity-100"
-            )}>
-              <div className="bg-card border border-border rounded-[2.5rem] p-6 md:p-8 shadow-xl sticky top-24">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gray-accent/10 rounded-full flex items-center justify-center">
-                    <User className="text-gray-accent w-5 h-5" />
-                  </div>
-                  <h3 className="text-xl font-bold">2. Twoje dane</h3>
-                </div>
+            <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mb-8">
+              {Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)).map(date => (
+                <button
+                  key={date.toString()}
+                  onClick={() => { setSelectedDate(date); setSelectedHour(null); }}
+                  className={cn(
+                    "p-4 rounded-2xl border-2 transition-all flex flex-col items-center",
+                    selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') ? "border-gray-accent bg-gray-accent/5" : "border-transparent bg-secondary/30",
+                    isBefore(date, startOfToday()) && "opacity-20 grayscale cursor-not-allowed"
+                  )}
+                  disabled={isBefore(date, startOfToday())}
+                >
+                  <span className="text-[10px] font-bold uppercase opacity-50">{format(date, "EEE", { locale: pl })}</span>
+                  <span className="text-lg font-black">{format(date, "d")}</span>
+                </button>
+              ))}
+            </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Imię / Pseudonim</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        id="name" 
-                        placeholder="Twoje imię" 
-                        className="pl-10 rounded-xl h-12" 
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="twoj@email.com" 
-                        className="pl-10 rounded-xl h-12" 
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram</Label>
-                    <div className="relative">
-                      <Instagram className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                      <Input 
-                        id="instagram" 
-                        type="text" 
-                        placeholder="@twoj_instagram" 
-                        className="pl-10 rounded-xl h-12" 
-                        value={formData.instagram}
-                        onChange={handleInputChange}
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="number_of_hours">Ilość godzin</Label>
-                    <Select value={numberOfHours} onValueChange={(value) => setNumberOfHours(value)} disabled={!selectedDate || !selectedHour}>
-                      <SelectTrigger className="rounded-xl h-12">
-                        <SelectValue placeholder="Wybierz ilość godzin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: maxBookableHours }, (_, i) => i + 1).map(hourNum => (
-                          <SelectItem key={hourNum} value={String(hourNum)}>
-                            {hourNum} {formatHoursPlural(hourNum)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="pt-4">
-                    <div className="bg-secondary/50 p-4 rounded-2xl mb-4 text-sm">
-                      <div className="flex justify-between mb-1">
-                        <span className="text-muted-foreground">Termin:</span>
-                        <span className="font-bold">
-                          {selectedDate && selectedHour 
-                            ? `${format(selectedDate, "dd.MM")} @ ${selectedHour}` 
-                            : "Nie wybrano"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Ilość godzin:</span>
-                        <span className="font-bold">{numberOfHours} {formatHoursPlural(parseInt(numberOfHours))}</span>
-                      </div>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full h-14 rounded-2xl text-lg font-bold" 
-                      disabled={loading || !selectedDate || !selectedHour || parseInt(numberOfHours) === 0}
+            {selectedDate && (
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`).map(hour => {
+                  const available = isHourTrulyAvailable(selectedDate, hour);
+                  return (
+                    <button
+                      key={hour}
+                      disabled={!available}
+                      onClick={() => setSelectedHour(hour)}
+                      className={cn(
+                        "py-3 rounded-xl text-xs font-bold border-2 transition-all",
+                        selectedHour === hour ? "bg-gray-accent text-primary-foreground border-gray-accent" : "bg-background border-border",
+                        !available && "opacity-20 cursor-not-allowed"
+                      )}
                     >
-                      {loading ? (
-                        <span className="flex items-center gap-2">
-                          <Clock className="animate-spin w-5 h-5" /> Przetwarzanie...
-                        </span>
-                      ) : "Potwierdź rezerwację"}
-                    </Button>
-                  </div>
-                </form>
+                      {hour}
+                    </button>
+                  );
+                })}
               </div>
+            )}
+          </div>
+
+          <div className={cn("transition-all", !selectedHour && "opacity-50 pointer-events-none")}>
+            <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl sticky top-24">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><User className="text-gray-accent" /> Dane rezerwacji</h3>
+              
+              {selectedEngineerName && (
+                <div className="mb-6 p-4 bg-gray-accent/10 rounded-2xl border border-gray-accent/20 flex items-center gap-3">
+                  <Headphones className="text-gray-accent shrink-0" size={20} />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-gray-accent tracking-widest">Realizator sesji</p>
+                    <p className="font-bold text-sm">{selectedEngineerName}</p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input placeholder="Imię / Pseudonim" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className="rounded-xl h-12" />
+                <Input type="email" placeholder="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="rounded-xl h-12" />
+                <Input placeholder="Instagram" value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} className="rounded-xl h-12" />
+                
+                <div className="pt-4">
+                  <p className="text-[10px] text-muted-foreground text-center mb-4 italic">
+                    * Sesja zostanie poprowadzona przez realizatora: <span className="font-bold text-foreground">{selectedEngineerName}</span>
+                  </p>
+                  <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>
+                    {loading ? "Przetwarzanie..." : "Potwierdź rezerwację"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
