@@ -37,7 +37,6 @@ const BookingForm = () => {
     fetchData();
   }, [currentWeekStart]);
 
-  // Resetuj ilość godzin przy zmianie wyboru terminu
   useEffect(() => {
     setNumberOfHours('1');
   }, [selectedHour, selectedDate]);
@@ -88,35 +87,26 @@ const BookingForm = () => {
     return !collision;
   };
 
-  // Oblicz maksymalną ilość dostępnych godzin pod rząd dla wybranego terminu
   const maxAvailableHours = useMemo(() => {
     if (!selectedDate || !selectedHour) return 0;
-    
     const startH = parseInt(selectedHour.split(':')[0]);
     const adminId = getEngineerForSlot(selectedDate, selectedHour);
     if (!adminId) return 0;
 
     let count = 0;
-    for (let i = 0; i < 8; i++) { // Max 8h sesji
+    for (let i = 0; i < 8; i++) {
       const currentH = startH + i;
       if (currentH >= 24) break;
-      
       const currentHourStr = `${String(currentH).padStart(2, '0')}:00`;
-      
-      // 1. Czy ten sam realizator jest dostępny?
       if (getEngineerForSlot(selectedDate, currentHourStr) !== adminId) break;
-      
-      // 2. Czy godzina nie jest już zarezerwowana?
       const slotStart = setHours(new Date(selectedDate), currentH);
       const isBooked = existingBookings.some(b => {
         const bDate = parseISO(b.booking_date);
         if (format(bDate, 'yyyy-MM-dd') !== format(selectedDate, 'yyyy-MM-dd')) return false;
-        
         const bStart = setHours(bDate, parseInt(b.booking_hour.split(':')[0]));
         const bEnd = addHours(bStart, b.number_of_hours);
         return (isBefore(slotStart, bEnd) && isAfter(addHours(slotStart, 1), bStart));
       });
-      
       if (isBooked) break;
       count++;
     }
@@ -133,14 +123,8 @@ const BookingForm = () => {
       return;
     }
 
-    if (parseInt(numberOfHours) > maxAvailableHours) {
-      showError(`Wybrany realizator jest dostępny tylko przez ${maxAvailableHours}h od tej godziny.`);
-      return;
-    }
-    
     setLoading(true);
     try {
-      // 1. Zapisz w bazie danych
       const { error: dbError } = await supabase.from('bookings').insert({
         service: 'recording',
         customer_name: formData.name,
@@ -154,7 +138,6 @@ const BookingForm = () => {
 
       if (dbError) throw dbError;
 
-      // 2. Wyślij powiadomienie e-mail
       const emailMessage = `
         Zarezerwowano nową sesję nagraniową!
         
@@ -170,29 +153,22 @@ const BookingForm = () => {
         Instagram: ${formData.instagram || 'Nie podano'}
       `;
 
-      try {
-        await fetch('https://lusuraonlijbjnvxihzt.supabase.co/functions/v1/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            message: emailMessage
-          }),
-        });
-      } catch (emailErr) {
-        console.error("Błąd wysyłki maila:", emailErr);
-        // Nie przerywamy procesu, jeśli tylko mail zawiódł, ale logujemy błąd
-      }
+      // Użycie supabase.functions.invoke zamiast fetch
+      const { error: funcError } = await supabase.functions.invoke('send-email', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          message: emailMessage
+        }
+      });
+
+      if (funcError) console.error("Błąd funkcji e-mail:", funcError);
 
       showSuccess("Zarezerwowano pomyślnie!");
-      
-      // Resetowanie formularza
       setSelectedDate(null);
       setSelectedHour(null);
       setNumberOfHours('1');
       setFormData({ name: '', email: '', instagram: '' });
-      
       fetchExistingBookings();
     } catch (error: any) {
       showError(error.message);
