@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/utils/toast';
-import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight, User, Copy, Trash2 } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight, User, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { DatePicker } from '@/components/DatePicker';
@@ -26,9 +26,8 @@ const AdminAvailability = () => {
   const [currentAdmin, setCurrentAdmin] = useState<{ id: string; full_name: string } | null>(null);
   const [admins, setAdmins] = useState<Record<string, string>>({});
   
-  // Stan dla przeciągania (drag-to-select)
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragMode, setDragMode] = useState<'add' | 'remove' | null>(null);
+  // Stan dla zaznaczania zakresu
+  const [rangeStart, setRangeStart] = useState<{ day: string; hourIndex: number } | null>(null);
   
   const navigate = useNavigate();
 
@@ -90,71 +89,62 @@ const AdminAvailability = () => {
     }
   };
 
-  const handleMouseDown = (day: string, hour: string) => {
+  const handleHourClick = (day: string, hourIndex: number) => {
     if (!currentAdmin) return;
+    const hour = hours[hourIndex];
     const existingAdminId = availability[day]?.[hour];
-    
-    if (existingAdminId && existingAdminId !== currentAdmin.id) return;
 
-    setIsDragging(true);
-    const mode = existingAdminId === currentAdmin.id ? 'remove' : 'add';
-    setDragMode(mode);
-    toggleHour(day, hour, mode);
-  };
+    // Jeśli godzina jest zajęta przez kogoś innego, nic nie rób
+    if (existingAdminId && existingAdminId !== currentAdmin.id) {
+      showError(`Zajęte przez: ${admins[existingAdminId]}`);
+      return;
+    }
 
-  const handleMouseEnter = (day: string, hour: string) => {
-    if (!isDragging || !dragMode || !currentAdmin) return;
-    const existingAdminId = availability[day]?.[hour];
-    
-    if (existingAdminId && existingAdminId !== currentAdmin.id) return;
-    
-    toggleHour(day, hour, dragMode);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setDragMode(null);
-  };
-
-  const toggleHour = (day: string, hour: string, mode: 'add' | 'remove') => {
-    setAvailability(prev => {
-      const dayData = { ...(prev[day] || {}) };
-      if (mode === 'add') {
-        dayData[hour] = currentAdmin!.id;
-      } else {
-        delete dayData[hour];
-      }
-      return { ...prev, [day]: dayData };
-    });
-  };
-
-  const copyToAllDays = (sourceDay: string) => {
-    const sourceData = availability[sourceDay] || {};
-    setAvailability(prev => {
-      const next = { ...prev };
-      days.forEach(day => {
-        if (day !== sourceDay) {
-          // Kopiujemy tylko te godziny, które nie są zajęte przez innych
-          const newDayData = { ...(next[day] || {}) };
-          
-          // Usuwamy nasze stare godziny w tym dniu
-          Object.keys(newDayData).forEach(h => {
-            if (newDayData[h] === currentAdmin?.id) delete newDayData[h];
-          });
-
-          // Dodajemy godziny z dnia źródłowego, jeśli nie są zajęte przez innych
-          Object.keys(sourceData).forEach(h => {
-            if (sourceData[h] === currentAdmin?.id && (!newDayData[h] || newDayData[h] === currentAdmin?.id)) {
-              newDayData[h] = currentAdmin!.id;
-            }
-          });
-          
-          next[day] = newDayData;
+    // Logika zakresu
+    if (!rangeStart || rangeStart.day !== day) {
+      // Pierwsze kliknięcie - ustaw start
+      setRangeStart({ day, hourIndex });
+      
+      // Od razu przełącz stan tej jednej godziny
+      setAvailability(prev => {
+        const dayData = { ...(prev[day] || {}) };
+        if (dayData[hour] === currentAdmin.id) {
+          delete dayData[hour];
+        } else {
+          dayData[hour] = currentAdmin.id;
         }
+        return { ...prev, [day]: dayData };
       });
-      return next;
-    });
-    showSuccess("Skopiowano na cały tydzień!");
+    } else {
+      // Drugie kliknięcie w tym samym dniu - wypełnij zakres
+      const start = Math.min(rangeStart.hourIndex, hourIndex);
+      const end = Math.max(rangeStart.hourIndex, hourIndex);
+      
+      // Sprawdzamy czy w zakresie nie ma godzin innych adminów
+      const hasConflict = hours.slice(start, end + 1).some(h => {
+        const id = availability[day]?.[h];
+        return id && id !== currentAdmin.id;
+      });
+
+      if (hasConflict) {
+        showError("Zakres zawiera godziny zajęte przez innego realizatora.");
+        setRangeStart(null);
+        return;
+      }
+
+      // Określamy czy dodajemy czy usuwamy (na podstawie stanu pierwszej klikniętej godziny)
+      // Ale zazwyczaj w zakresie "od-do" użytkownik chce po prostu zaznaczyć dostępność
+      setAvailability(prev => {
+        const dayData = { ...(prev[day] || {}) };
+        for (let i = start; i <= end; i++) {
+          dayData[hours[i]] = currentAdmin.id;
+        }
+        return { ...prev, [day]: dayData };
+      });
+      
+      setRangeStart(null);
+      showSuccess("Zaznaczono zakres.");
+    }
   };
 
   const clearDay = (day: string) => {
@@ -165,6 +155,7 @@ const AdminAvailability = () => {
       });
       return { ...prev, [day]: dayData };
     });
+    setRangeStart(null);
   };
 
   const handleSave = async () => {
@@ -191,7 +182,7 @@ const AdminAvailability = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background select-none" onMouseUp={handleMouseUp}>
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-20 md:pt-24 pb-12 container mx-auto px-4">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
@@ -226,7 +217,11 @@ const AdminAvailability = () => {
             <DatePicker date={selectedDate} setDate={setSelectedDate} className="w-full sm:w-[200px]" />
             <Button variant="outline" size="icon" onClick={() => setSelectedDate(addWeeks(selectedDate!, 1))} className="rounded-full h-10 w-10"><ArrowRight size={18} /></Button>
           </div>
-          <p className="text-xs text-muted-foreground italic">Kliknij i przeciągnij, aby szybko zaznaczyć wiele godzin.</p>
+          <p className="text-xs text-muted-foreground italic">
+            {rangeStart 
+              ? `Wybierz godzinę końcową dla dnia: ${rangeStart.day}` 
+              : "Kliknij godzinę startową, a potem końcową, aby zaznaczyć zakres."}
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-[2rem] shadow-xl overflow-hidden">
@@ -237,10 +232,7 @@ const AdminAvailability = () => {
                   {days.map((day) => (
                     <th key={day} className="p-4 text-center border-b border-border">
                       <div className="text-sm font-bold">{day}</div>
-                      <div className="flex justify-center gap-1 mt-2">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-gray-accent/20" onClick={() => copyToAllDays(day)} title="Kopiuj na cały tydzień">
-                          <Copy size={12} />
-                        </Button>
+                      <div className="flex justify-center mt-2">
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-destructive/20 text-destructive" onClick={() => clearDay(day)} title="Wyczyść dzień">
                           <Trash2 size={12} />
                         </Button>
@@ -250,27 +242,28 @@ const AdminAvailability = () => {
                 </tr>
               </thead>
               <tbody>
-                {hours.map(hour => (
+                {hours.map((hour, hIndex) => (
                   <tr key={hour}>
                     {days.map(day => {
                       const adminId = availability[day]?.[hour];
                       const isMine = adminId === currentAdmin?.id;
                       const isOthers = adminId && adminId !== currentAdmin?.id;
+                      const isRangeStart = rangeStart?.day === day && rangeStart?.hourIndex === hIndex;
 
                       return (
                         <td key={`${day}-${hour}`} className="p-1 border-b border-border">
-                          <div
-                            onMouseDown={() => handleMouseDown(day, hour)}
-                            onMouseEnter={() => handleMouseEnter(day, hour)}
+                          <button
+                            onClick={() => handleHourClick(day, hIndex)}
                             className={cn(
-                              "w-full h-10 rounded-lg text-xs font-medium transition-all flex items-center justify-center cursor-pointer",
+                              "w-full h-10 rounded-lg text-xs font-medium transition-all flex items-center justify-center",
                               isMine ? "bg-gray-accent text-primary-foreground shadow-md" : 
                               isOthers ? "bg-destructive/20 text-destructive cursor-not-allowed" : 
-                              "bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+                              "bg-secondary/30 text-muted-foreground hover:bg-secondary/60",
+                              isRangeStart && "ring-2 ring-white ring-offset-2 ring-offset-gray-accent"
                             )}
                           >
                             {isOthers ? (admins[adminId] || 'Zajęte') : hour}
-                          </div>
+                          </button>
                         </td>
                       );
                     })}
