@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User, ArrowLeft, ArrowRight } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -36,6 +36,11 @@ const BookingForm = () => {
     };
     fetchData();
   }, [currentWeekStart]);
+
+  // Resetuj ilość godzin przy zmianie wyboru terminu
+  useEffect(() => {
+    setNumberOfHours('1');
+  }, [selectedHour, selectedDate]);
 
   const fetchAdmins = async () => {
     const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'admin');
@@ -83,12 +88,52 @@ const BookingForm = () => {
     return !collision;
   };
 
+  // Oblicz maksymalną ilość dostępnych godzin pod rząd dla wybranego terminu
+  const maxAvailableHours = useMemo(() => {
+    if (!selectedDate || !selectedHour) return 0;
+    
+    const startH = parseInt(selectedHour.split(':')[0]);
+    const adminId = getEngineerForSlot(selectedDate, selectedHour);
+    if (!adminId) return 0;
+
+    let count = 0;
+    for (let i = 0; i < 8; i++) { // Max 8h sesji
+      const currentH = startH + i;
+      if (currentH >= 24) break;
+      
+      const currentHourStr = `${String(currentH).padStart(2, '0')}:00`;
+      
+      // 1. Czy ten sam realizator jest dostępny?
+      if (getEngineerForSlot(selectedDate, currentHourStr) !== adminId) break;
+      
+      // 2. Czy godzina nie jest już zarezerwowana?
+      const slotStart = setHours(new Date(selectedDate), currentH);
+      const isBooked = existingBookings.some(b => {
+        const bDate = parseISO(b.booking_date);
+        if (format(bDate, 'yyyy-MM-dd') !== format(selectedDate, 'yyyy-MM-dd')) return false;
+        
+        const bStart = setHours(bDate, parseInt(b.booking_hour.split(':')[0]));
+        const bEnd = addHours(bStart, b.number_of_hours);
+        return (isBefore(slotStart, bEnd) && isAfter(addHours(slotStart, 1), bStart));
+      });
+      
+      if (isBooked) break;
+      count++;
+    }
+    return count;
+  }, [selectedDate, selectedHour, dbAvailability, existingBookings]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const adminId = selectedDate && selectedHour ? getEngineerForSlot(selectedDate, selectedHour) : null;
     
     if (!selectedDate || !selectedHour || !adminId || !formData.name || !formData.email) {
       showError("Wypełnij wszystkie pola.");
+      return;
+    }
+
+    if (parseInt(numberOfHours) > maxAvailableHours) {
+      showError(`Wybrany realizator jest dostępny tylko przez ${maxAvailableHours}h od tej godziny.`);
       return;
     }
     
@@ -216,7 +261,7 @@ const BookingForm = () => {
                       <SelectValue placeholder="Wybierz ilość godzin" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-border bg-card">
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                      {Array.from({ length: maxAvailableHours }, (_, i) => i + 1).map(num => (
                         <SelectItem key={num} value={num.toString()} className="rounded-xl">
                           {num} h
                         </SelectItem>
