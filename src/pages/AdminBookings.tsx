@@ -5,27 +5,38 @@ import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { showSuccess, showError } from '@/utils/toast';
-import { Calendar as CalendarIcon, LogOut, Loader2, Trash2, Mail, Phone, User, ArrowLeft, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, LogOut, Loader2, Trash2, Mail, Phone, User, ArrowLeft, Clock, Filter } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, startOfToday } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 const AdminBookings = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false); // Stan do przełączania widoku (wszystkie vs nadchodzące)
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [showAll]);
 
   const fetchBookings = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('bookings')
         .select('*')
-        .order('booking_date', { ascending: true });
+        .order('booking_date', { ascending: true })
+        .order('booking_hour', { ascending: true });
+      
+      // Jeśli nie chcemy widzieć wszystkich, filtrujemy tylko od dzisiaj wzwyż
+      if (!showAll) {
+        const today = format(startOfToday(), 'yyyy-MM-dd');
+        query = query.gte('booking_date', today);
+      }
+
+      const { data, error } = await query;
       
       if (error) throw error;
       setBookings(data || []);
@@ -59,14 +70,6 @@ const AdminBookings = () => {
     navigate('/login');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-gray-accent w-12 h-12" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -76,9 +79,18 @@ const AdminBookings = () => {
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <CalendarIcon className="text-gray-accent" /> Lista Rezerwacji
             </h1>
-            <p className="text-muted-foreground">Zarządzaj nadchodzącymi sesjami w studio.</p>
+            <p className="text-muted-foreground">
+              {showAll ? "Wszystkie rezerwacje (historia i nadchodzące)." : "Tylko dzisiejsze i nadchodzące sesje."}
+            </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAll(!showAll)} 
+              className="rounded-full px-6 h-12 gap-2"
+            >
+              <Filter size={18} /> {showAll ? "Pokaż tylko nadchodzące" : "Pokaż historię"}
+            </Button>
             <Link to="/admin">
               <Button variant="outline" className="rounded-full px-6 h-12 gap-2">
                 <ArrowLeft size={18} /> Harmonogram
@@ -91,7 +103,11 @@ const AdminBookings = () => {
         </div>
 
         <div className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-xl">
-          {bookings.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="animate-spin text-gray-accent w-12 h-12" />
+            </div>
+          ) : bookings.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-secondary/50">
@@ -99,7 +115,7 @@ const AdminBookings = () => {
                     <TableHead className="font-bold">Data i Godzina</TableHead>
                     <TableHead className="font-bold">Klient</TableHead>
                     <TableHead className="font-bold">Usługa</TableHead>
-                    <TableHead className="font-bold">Ilość godzin</TableHead> {/* Nowa kolumna */}
+                    <TableHead className="font-bold">Ilość godzin</TableHead>
                     <TableHead className="font-bold">Kontakt</TableHead>
                     <TableHead className="text-right font-bold">Akcje</TableHead>
                   </TableRow>
@@ -124,7 +140,7 @@ const AdminBookings = () => {
                           {booking.service}
                         </span>
                       </TableCell>
-                      <TableCell> {/* Nowa komórka */}
+                      <TableCell>
                         <div className="flex items-center gap-1">
                           <Clock size={14} className="text-muted-foreground" />
                           <span>{booking.number_of_hours}h</span>
@@ -135,9 +151,9 @@ const AdminBookings = () => {
                           <a href={`mailto:${booking.customer_email}`} className="flex items-center gap-2 hover:text-gray-accent transition-colors">
                             <Mail size={14} /> {booking.customer_email}
                           </a>
-                          <a href={`tel:${booking.customer_phone}`} className="flex items-center gap-2 hover:text-gray-accent transition-colors">
-                            <Phone size={14} /> {booking.customer_phone}
-                          </a>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Phone size={14} /> {booking.customer_instagram || "Brak IG"}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -159,7 +175,9 @@ const AdminBookings = () => {
             <div className="text-center py-20">
               <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-20 mb-4" />
               <h3 className="text-xl font-medium text-muted-foreground">Brak rezerwacji</h3>
-              <p className="text-sm text-muted-foreground mt-1">Wszystkie nowe rezerwacje pojawią się tutaj.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {showAll ? "Baza danych jest pusta." : "Nie masz żadnych nadchodzących rezerwacji."}
+              </p>
             </div>
           )}
         </div>
