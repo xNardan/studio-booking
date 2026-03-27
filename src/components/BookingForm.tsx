@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight, Headphones } from 'lucide-react';
+import { User, Mail, Instagram, Calendar as CalendarIcon, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -177,25 +177,17 @@ const BookingForm = () => {
             <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl sticky top-24">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><User className="text-gray-accent" /> Dane rezerwacji</h3>
               
-              {selectedEngineerName && (
-                <div className="mb-6 p-4 bg-gray-accent/10 rounded-2xl border border-gray-accent/20 flex items-center gap-3">
-                  <Headphones className="text-gray-accent shrink-0" size={20} />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase text-gray-accent tracking-widest">Realizator sesji</p>
-                    <p className="font-bold text-sm">{selectedEngineerName}</p>
-                  </div>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input placeholder="Imię / Pseudonim" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className="rounded-xl h-12" />
                 <Input type="email" placeholder="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="rounded-xl h-12" />
                 <Input placeholder="Instagram" value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} className="rounded-xl h-12" />
                 
                 <div className="pt-4">
-                  <p className="text-[10px] text-muted-foreground text-center mb-4 italic">
-                    * Sesja zostanie poprowadzona przez realizatora: <span className="font-bold text-foreground">{selectedEngineerName}</span>
-                  </p>
+                  {selectedEngineerName && (
+                    <p className="text-[10px] text-muted-foreground text-center mb-4 italic">
+                      * Sesja zostanie poprowadzona przez realizatora: <span className="font-bold text-foreground">{selectedEngineerName}</span>
+                    </p>
+                  )}
                   <Button type="submit" className="w-full h-14 rounded-2xl font-bold text-lg" disabled={loading}>
                     {loading ? "Przetwarzanie..." : "Potwierdź rezerwację"}
                   </Button>
