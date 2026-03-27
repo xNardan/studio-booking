@@ -2,14 +2,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import studioInterior from '@/assets/studio-interior.png'; // Importuj zdjęcie
+import heroImage from '@/assets/hero.jpg'; // Importuj nowe zdjęcie hero
 
 const Hero = () => {
   return (
     <section 
       className="relative h-[70vh] md:h-[80vh] flex items-center justify-center text-center overflow-hidden rounded-b-[3rem] shadow-2xl"
       style={{
-        backgroundImage: `url(${studioInterior})`,
+        backgroundImage: `url(${heroImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
