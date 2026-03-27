@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Mic, Headphones, Music2 } from 'lucide-react'; // Usunięto Radio
+import { Mic, Headphones, Music2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const services = [
@@ -18,7 +18,7 @@ const services = [
     price: "od 150 zł/utwór"
   },
   {
-    title: "Produkcja muzyczna (bity)", // Zmieniono nazwę
+    title: "Produkcja muzyczna (bity)",
     description: "Tworzenie oryginalnych beatów dopasowanych do Twojego stylu i brzmienia. Idealne dla artystów szukających unikalnego podkładu do swojego utworu.",
     icon: Music2,
     price: "wycena indywidualna"
@@ -33,7 +33,7 @@ const Services = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Nasze Usługi</h2>
           <p className="text-muted-foreground">Wybierz to, czego potrzebuje Twój projekt.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Zmieniono na 3 kolumny */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service, index) => (
             <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-shadow rounded-3xl overflow-hidden">
               <CardHeader className="pb-2">
@@ -44,7 +44,7 @@ const Services = () => {
                 <CardDescription>{service.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="font-bold text-gray-accent">{service.price}</p>
+                <p className="font-bold text-white">{service.price}</p>
               </CardContent>
             </Card>
           ))}
