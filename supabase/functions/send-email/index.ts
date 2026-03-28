@@ -18,7 +18,7 @@ serve(async (req) => {
       throw new Error("Missing RESEND_API_KEY secret");
     }
 
-    console.log(`[send-email] Sending emails via Resend for ${name}`);
+    console.log(`[send-email] Processing request for ${name} (${email})`);
 
     // 1. Mail do studia
     const resStudio = await fetch("https://api.resend.com/emails", {
@@ -28,12 +28,15 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Flow Studio <onboarding@resend.dev>", // Po weryfikacji domeny zmień na no-reply@flowstudiobp.pl
+        from: "Flow Studio <onboarding@resend.dev>",
         to: "flowstudiobp@gmail.com",
         subject: `Nowa rezerwacja: ${name}`,
         text: `Otrzymano nową rezerwację od ${name} (${email}).\n\nSzczegóły:\n${message}`,
       }),
     });
+
+    const studioData = await resStudio.json();
+    console.log("[send-email] Studio email response:", studioData);
 
     // 2. Potwierdzenie dla klienta
     const resClient = await fetch("https://api.resend.com/emails", {
@@ -50,13 +53,12 @@ serve(async (req) => {
       }),
     });
 
-    if (!resStudio.ok || !resClient.ok) {
-      const err = await resStudio.text();
-      console.error("[send-email] Resend API Error:", err);
-      throw new Error("Failed to send one or more emails via Resend");
-    }
+    const clientData = await resClient.json();
+    console.log("[send-email] Client email response:", clientData);
 
-    console.log("[send-email] Emails sent successfully via Resend");
+    if (!resStudio.ok || !resClient.ok) {
+      throw new Error(`Resend Error: Studio(${resStudio.status}) Client(${resClient.status})`);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
