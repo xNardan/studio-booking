@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import nodemailer from "https://esm.sh/nodemailer@6.9.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,61 +17,41 @@ serve(async (req) => {
     const body = await req.json();
     const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = body;
     
-    const client = new SmtpClient();
     const hostname = Deno.env.get("SMTP_HOSTNAME") || "";
     const user = Deno.env.get("SMTP_USER") || "";
     const password = Deno.env.get("SMTP_PASSWORD") || "";
     const portStr = Deno.env.get("SMTP_PORT") || "587";
     const port = parseInt(portStr);
 
-    console.log(`[send-email] Próba połączenia z ${hostname}:${port} jako ${user}`);
+    console.log(`[send-email] Konfiguracja transportera: ${hostname}:${port}`);
 
-    try {
-      if (port === 465) {
-        console.log("[send-email] Łączenie przez TLS (465)...");
-        await client.connectTLS({
-          hostname,
-          port,
-          username: user,
-          password: password,
-        });
-      } else {
-        console.log(`[send-email] Łączenie przez STARTTLS/Standard (${port})...`);
-        await client.connect({
-          hostname,
-          port,
-          username: user,
-          password: password,
-        });
+    // Tworzymy transporter Nodemailer
+    const transporter = nodemailer.createTransport({
+      host: hostname,
+      port: port,
+      secure: port === 465, // true dla 465, false dla innych (np. 587 z STARTTLS)
+      auth: {
+        user: user,
+        pass: password,
+      },
+      tls: {
+        // Niektóre serwery wymagają tego przy STARTTLS
+        rejectUnauthorized: false 
       }
-    } catch (connErr) {
-      console.error("[send-email] Błąd połączenia głównego:", connErr.message);
-      // Ostatnia szansa: próba bez jawnego TLS (niektóre serwery same negocjują)
-      if (port === 465) {
-        console.log("[send-email] Próba awaryjna na 465 bez connectTLS...");
-        await client.connect({
-          hostname,
-          port,
-          username: user,
-          password: password,
-        });
-      } else {
-        throw connErr;
-      }
-    }
-
-    console.log("[send-email] Autoryzacja i połączenie OK");
+    });
 
     const startHour = parseInt(bookingHour.split(':')[0]);
     const endHour = startHour + parseInt(duration);
     const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
 
+    console.log("[send-email] Wysyłanie maila do klienta...");
+
     // Mail dla KLIENTA
-    await client.send({
-      from: user,
+    await transporter.sendMail({
+      from: `"Flow Studio" <${user}>`,
       to: email,
       subject: `Potwierdzenie rezerwacji - Flow Studio`,
-      content: `
+      html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
           <h2 style="color: #333;">Cześć ${name}!</h2>
           <p>Twoja sesja w <strong>Flow Studio</strong> została zarezerwowana.</p>
@@ -85,15 +65,16 @@ serve(async (req) => {
           <p>Do zobaczenia!</p>
         </div>
       `,
-      html: true,
     });
 
+    console.log("[send-email] Wysyłanie maila do studia...");
+
     // Mail dla STUDIA
-    await client.send({
-      from: user,
+    await transporter.sendMail({
+      from: `"System Rezerwacji" <${user}>`,
       to: "flowstudiobp@gmail.com",
       subject: `NOWA REZERWACJA: ${bookingDate} o ${bookingHour}`,
-      content: `
+      html: `
         <div style="font-family: sans-serif; padding: 20px;">
           <h2>Nowa rezerwacja w systemie!</h2>
           <p><strong>Klient:</strong> ${name}</p>
@@ -103,11 +84,9 @@ serve(async (req) => {
           <p><strong>Realizator:</strong> ${engineerName}</p>
         </div>
       `,
-      html: true,
     });
 
-    console.log("[send-email] Sukces: Maile wysłane");
-    await client.close();
+    console.log("[send-email] Sukces: Maile wysłane poprawnie");
 
     return new Response(JSON.stringify({ message: "Sent" }), {
       status: 200,
@@ -115,7 +94,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("[send-email] KRYTYCZNY BŁĄD:", error);
+    console.error("[send-email] BŁĄD:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
