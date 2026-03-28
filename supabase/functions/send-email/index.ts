@@ -19,10 +19,10 @@ serve(async (req) => {
     const hostname = Deno.env.get("SMTP_HOSTNAME");
     const user = Deno.env.get("SMTP_USER");
     const password = Deno.env.get("SMTP_PASSWORD");
-    const portStr = Deno.env.get("SMTP_PORT") || "465";
+    const portStr = Deno.env.get("SMTP_PORT") || "587"; // Default to 587
     const port = parseInt(portStr);
-    
-    // Validate required environment variables    if (!hostname || !user || !password) {
+        // Validate required environment variables
+    if (!hostname || !user || !password) {
       console.error("[send-email] Missing SMTP configuration:", { 
         hostname: !!hostname, 
         user: !!user, 
@@ -38,28 +38,24 @@ serve(async (req) => {
 
     console.log(`[send-email] Attempting SMTP connection to ${hostname}:${port} for user ${user}`);
 
-    // Configure nodemailer with better debugging
+    // Configure nodemailer with proper TLS settings
     let transporter;
     try {
+      // For port 587, we need to use STARTTLS (secure: false)
+      // For port 465, we use SSL (secure: true)
       transporter = nodemailer.createTransport({
         host: hostname,
         port: port,
-        secure: port === 465, // True for 465 (SSL), false for other ports
+        secure: port === 465, // true for 465 (SSL), false for other ports
         auth: {
           user: user,
           pass: password,
         },
         tls: {
-          // Do not fail on invalid certs
+          // Accept self-signed certificates (common in development)
           rejectUnauthorized: false,
-          // Enable debugging if needed
-          // minVersion: 'TLSv1.2'
         },
-        // Increase timeout for connection
-        connectionTimeout: 30000,
-        // Debugging
-        debug: true,
-        logger: true
+        // Increase timeout for connection        connectionTimeout: 30000,
       });
 
       // Verify connection configuration
@@ -93,7 +89,8 @@ serve(async (req) => {
       }
     ];
 
-    // Send emails with individual error handling    const sendResults = [];
+    // Send emails with individual error handling
+    const sendResults = [];
     for (let i = 0; i < mailOptions.length; i++) {
       const option = mailOptions[i];
       try {
@@ -108,7 +105,8 @@ serve(async (req) => {
       }
     }
 
-    // Check if at least one email was sent successfully    const successfulSends = sendResults.filter(r => r.success).length;
+    // Check if at least one email was sent successfully
+    const successfulSends = sendResults.filter(r => r.success).length;
     if (successfulSends === 0) {
       throw new Error("Failed to send any emails");
     }
@@ -126,7 +124,6 @@ serve(async (req) => {
     console.error("[send-email] CRITICAL ERROR:", error);
     return new Response(JSON.stringify({ 
       error: error.message || "Unknown error occurred",
-      // Include stack trace in development
       ...(Deno.env.get("ENVIRONMENT") !== "production" && { stack: error.stack })
     }), {
       status: 500,
