@@ -12,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { showSuccess, showError } from '@/utils/toast';
 import { Link } from 'react-router-dom';
-import hero2Image from '@/assets/hero2.jpg'; // Importuj nowe zdjęcie hero2
+import hero2Image from '@/assets/hero2.jpg';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [contactForm, setContactForm] = useState({
@@ -38,24 +39,24 @@ const Index = () => {
     }
 
     try {
-      const response = await fetch('https://lusuraonlijbjnvxihzt.supabase.co/functions/v1/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(contactForm),
+      // Używamy funkcji Edge Function 'send-email', która jest już skonfigurowana do wysyłki
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          name: contactForm.name,
+          email: contactForm.email,
+          message: contactForm.message,
+          // Dodajemy informację, że to wiadomość z formularza kontaktowego
+          bookingDetails: "Wiadomość z formularza kontaktowego na stronie"
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Wystąpił błąd podczas wysyłania wiadomości.");
-      }
+      if (error) throw error;
 
       showSuccess("Twoja wiadomość została wysłana!");
       setContactForm({ name: '', email: '', message: '' });
     } catch (error: any) {
       console.error("Błąd wysyłania wiadomości:", error);
-      showError(error.message || "Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
+      showError("Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
     } finally {
       setLoadingContact(false);
     }
