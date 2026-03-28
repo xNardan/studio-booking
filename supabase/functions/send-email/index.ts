@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("[send-email] Start żądania");
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,117 +17,91 @@ serve(async (req) => {
     const body = await req.json();
     const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = body;
     
-    // Get SMTP configuration from environment variables
     const hostname = Deno.env.get("SMTP_HOSTNAME");
     const user = Deno.env.get("SMTP_USER");
     const password = Deno.env.get("SMTP_PASSWORD");
-    const portStr = Deno.env.get("SMTP_PORT") || "587"; // Default to 587
+    const portStr = Deno.env.get("SMTP_PORT") || "587";
     const port = parseInt(portStr);
-        // Validate required environment variables
+
     if (!hostname || !user || !password) {
-      console.error("[send-email] Missing SMTP configuration:", { 
-        hostname: !!hostname, 
-        user: !!user, 
-        password: !!password,
-        port      });
-      return new Response(JSON.stringify({ 
-        error: "SMTP configuration missing. Please check SMTP_HOSTNAME, SMTP_USER, SMTP_PASSWORD environment variables." 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      throw new Error("Brak zmiennych środowiskowych SMTP w Supabase.");
     }
 
-    console.log(`[send-email] Attempting SMTP connection to ${hostname}:${port} for user ${user}`);
+    console.log(`[send-email] Łączenie z: ${hostname}:${port} (Użytkownik: ${user})`);
 
-    // Configure nodemailer with proper TLS settings
-    let transporter;
+    // Bardziej restrykcyjna, ale stabilna konfiguracja
+    const transporter = nodemailer.createTransport({
+      host: hostname,
+      port: port,
+      secure: port === 465, // true dla 465, false dla 587
+      auth: {
+        user: user,
+        pass: password,
+      },
+      tls: {
+        // Wymuszamy TLS 1.2+ i ignorujemy błędy certyfikatów (częste u polskich dostawców)
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 10000, // 10 sekund na połączenie
+      greetingTimeout: 10000,
+      socketTimeout: 10000
+    });
+
+    // Test połączenia
+    console.log("[send-email] Weryfikacja połączenia z serwerem...");
     try {
-      // For port 587, we need to use STARTTLS (secure: false)
-      // For port 465, we use SSL (secure: true)
-      transporter = nodemailer.createTransport({
-        host: hostname,
-        port: port,
-        secure: port === 465, // true for 465 (SSL), false for other ports
-        auth: {
-          user: user,
-          pass: password,
-        },
-        tls: {
-          // Accept self-signed certificates (common in development)
-          rejectUnauthorized: false,
-        },
-        // Increase timeout for connection        connectionTimeout: 30000,
-      });
-
-      // Verify connection configuration
-      console.log("[send-email] SMTP transporter created successfully");
-    } catch (configError) {
-      console.error("[send-email] SMTP configuration error:", configError);
-      return new Response(JSON.stringify({ 
-        error: `SMTP configuration failed: ${configError.message}` 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      await transporter.verify();
+      console.log("[send-email] Połączenie SMTP zweryfikowane pomyślnie");
+    } catch (verifyError) {
+      console.error("[send-email] Błąd weryfikacji połączenia:", verifyError.message);
+      throw new Error(`Nie udało się połączyć z serwerem SMTP: ${verifyError.message}`);
     }
 
     const startHour = parseInt(bookingHour.split(':')[0]);
     const endHour = startHour + parseInt(duration);
     const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
 
-    const mailOptions = [
-      {
-        from: `"Flow Studio" <${user}>`,
-        to: email,
-        subject: `Potwierdzenie rezerwacji - Flow Studio`,
-        html: `<p>Cześć ${name}!</p><p>Twoja sesja: <b>${bookingDate}</b> o <b>${timeRange}</b>.</p><p>Realizator: ${engineerName}</p>`
-      },
-      {
-        from: `"System" <${user}>`,
-        to: "flowstudiobp@gmail.com",
-        subject: `NOWA REZERWACJA: ${bookingDate}`,
-        html: `<p>Klient: ${name} (${email})</p><p>IG: ${instagram || 'Brak'}</p><p>Termin: ${bookingDate}, ${timeRange}</p>`
-      }
-    ];
+    const clientMail = {
+      from: `"Flow Studio" <${user}>`,
+      to: email,
+      subject: `Potwierdzenie rezerwacji - Flow Studio`,
+      html: `<div style="font-family: sans-serif; padding: 20px;">
+        <h2>Cześć ${name}!</h2>
+        <p>Twoja sesja została zarezerwowana na <strong>${bookingDate}</strong> o godzinie <strong>${timeRange}</strong>.</p>
+        <p>Realizator: ${engineerName}</p>
+        <p>Do zobaczenia!</p>
+      </div>`
+    };
 
-    // Send emails with individual error handling
-    const sendResults = [];
-    for (let i = 0; i < mailOptions.length; i++) {
-      const option = mailOptions[i];
-      try {
-        console.log(`[send-email] Sending email ${i+1}/${mailOptions.length} to: ${option.to}`);
-        const info = await transporter.sendMail(option);
-        console.log(`[send-email] Email ${i+1} sent successfully:`, info.messageId);
-        sendResults.push({ success: true, messageId: info.messageId });
-      } catch (emailError) {
-        console.error(`[send-email] Failed to send email ${i+1}:`, emailError);
-        sendResults.push({ success: false, error: emailError.message });
-        // Continue to try sending other emails even if one fails
-      }
-    }
+    const studioMail = {
+      from: `"System Rezerwacji" <${user}>`,
+      to: "flowstudiobp@gmail.com",
+      subject: `NOWA REZERWACJA: ${bookingDate} o ${bookingHour}`,
+      html: `<div style="font-family: sans-serif; padding: 20px;">
+        <h2>Nowa rezerwacja!</h2>
+        <p>Klient: ${name} (${email})</p>
+        <p>IG: ${instagram || 'Brak'}</p>
+        <p>Termin: ${bookingDate}, ${timeRange}</p>
+        <p>Realizator: ${engineerName}</p>
+      </div>`
+    };
 
-    // Check if at least one email was sent successfully
-    const successfulSends = sendResults.filter(r => r.success).length;
-    if (successfulSends === 0) {
-      throw new Error("Failed to send any emails");
-    }
+    console.log("[send-email] Wysyłanie wiadomości...");
+    await Promise.all([
+      transporter.sendMail(clientMail),
+      transporter.sendMail(studioMail)
+    ]);
 
-    console.log("[send-email] Email sending process completed", { successfulSends, total: mailOptions.length });
-    return new Response(JSON.stringify({ 
-      message: `Partial success: ${successfulSends}/${mailOptions.length} emails sent`,
-      details: sendResults
-    }), {
+    console.log("[send-email] Sukces!");
+    return new Response(JSON.stringify({ message: "Sent" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("[send-email] CRITICAL ERROR:", error);
-    return new Response(JSON.stringify({ 
-      error: error.message || "Unknown error occurred",
-      ...(Deno.env.get("ENVIRONMENT") !== "production" && { stack: error.stack })
-    }), {
+    console.error("[send-email] KRYTYCZNY BŁĄD:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
