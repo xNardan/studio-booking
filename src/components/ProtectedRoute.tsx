@@ -13,34 +13,42 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        navigate('/login');
-        setLoading(false);
-        return;
-      }
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          navigate('/login');
+          return;
+        }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle(); // Używamy maybeSingle zamiast single, aby uniknąć błędu 406
 
-      if (profileError) {
-        showError("Błąd weryfikacji profilu.");
-        await supabase.auth.signOut();
-        navigate('/login');
-      } else if (profile?.role !== 'admin' && profile?.role !== 'superadmin') {
-        showError("Brak uprawnień.");
-        await supabase.auth.signOut();
-        navigate('/login');
-      } else {
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          // Nie wylogowujemy od razu, dajemy szansę na odświeżenie
+          showError("Problem z dostępem do profilu. Spróbuj odświeżyć stronę.");
+          return;
+        }
+
+        if (!profile || (profile.role !== 'admin' && profile.role !== 'superadmin')) {
+          showError("Brak uprawnień administratora.");
+          await supabase.auth.signOut();
+          navigate('/login');
+          return;
+        }
+
         setAuthenticated(true);
+      } catch (err) {
+        console.error("Auth check failed:", err);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
+    
     checkAuth();
   }, [navigate]);
 
