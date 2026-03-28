@@ -17,8 +17,6 @@ serve(async (req) => {
     const body = await req.json();
     const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = body;
     
-    console.log("[send-email] Dane rezerwacji:", { name, email, bookingDate, bookingHour, duration });
-
     const client = new SmtpClient();
     const hostname = Deno.env.get("SMTP_HOSTNAME") || "";
     const user = Deno.env.get("SMTP_USER") || "";
@@ -28,16 +26,30 @@ serve(async (req) => {
 
     console.log(`[send-email] Próba połączenia z ${hostname}:${port} jako ${user}`);
 
-    // Wybór metody połączenia w zależności od portu
-    if (port === 465) {
-      await client.connectTLS({
-        hostname,
-        port,
-        username: user,
-        password: password,
-      });
-    } else {
-      // Dla portu 587 lub innych używamy standardowego connect (często wymaga STARTTLS)
+    // Próba połączenia z obsługą błędów szyfrowania
+    try {
+      if (port === 465) {
+        console.log("[send-email] Próba connectTLS (port 465)");
+        await client.connectTLS({
+          hostname,
+          port,
+          username: user,
+          password: password,
+        });
+      } else {
+        console.log(`[send-email] Próba connect (port ${port})`);
+        await client.connect({
+          hostname,
+          port,
+          username: user,
+          password: password,
+        });
+      }
+    } catch (connError) {
+      console.error("[send-email] Pierwsza próba połączenia nieudana:", connError.message);
+      
+      // Jeśli 465 zawiodło, spróbujmy zwykłego connect (niektóre serwery tak mają)
+      console.log("[send-email] Próba alternatywnej metody połączenia...");
       await client.connect({
         hostname,
         port,
@@ -46,7 +58,7 @@ serve(async (req) => {
       });
     }
 
-    console.log("[send-email] Połączono z serwerem SMTP");
+    console.log("[send-email] Połączono pomyślnie z serwerem SMTP");
 
     const startHour = parseInt(bookingHour.split(':')[0]);
     const endHour = startHour + parseInt(duration);
@@ -101,7 +113,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("[send-email] BŁĄD:", error);
+    console.error("[send-email] KRYTYCZNY BŁĄD:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
