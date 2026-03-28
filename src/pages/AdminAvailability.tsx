@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { showSuccess, showError } from '@/utils/toast';
-import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight, User, Trash2 } from 'lucide-react';
+import { Save, Calendar as CalendarIcon, LogOut, Loader2, ListChecks, ArrowLeft, ArrowRight, User, Trash2, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import { DatePicker } from '@/components/DatePicker';
@@ -23,10 +23,9 @@ const AdminAvailability = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [currentAdmin, setCurrentAdmin] = useState<{ id: string; full_name: string } | null>(null);
+  const [currentAdmin, setCurrentAdmin] = useState<{ id: string; full_name: string, role: string } | null>(null);
   const [admins, setAdmins] = useState<Record<string, string>>({});
   
-  // Stan dla zaznaczania zakresu
   const [rangeStart, setRangeStart] = useState<{ day: string; hourIndex: number } | null>(null);
   
   const navigate = useNavigate();
@@ -35,12 +34,12 @@ const AdminAvailability = () => {
     const getAdmin = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase.from('profiles').select('id, full_name').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('id, full_name, role').eq('id', user.id).single();
         setCurrentAdmin(profile);
       }
     };
     const fetchAllAdmins = async () => {
-      const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'admin');
+      const { data } = await supabase.from('profiles').select('id, full_name').in('role', ['admin', 'superadmin']);
       if (data) {
         const adminMap: Record<string, string> = {};
         data.forEach(a => adminMap[a.id] = a.full_name || 'Nieznany');
@@ -94,18 +93,14 @@ const AdminAvailability = () => {
     const hour = hours[hourIndex];
     const existingAdminId = availability[day]?.[hour];
 
-    // Jeśli godzina jest zajęta przez kogoś innego, nic nie rób
     if (existingAdminId && existingAdminId !== currentAdmin.id) {
       showError(`Zajęte przez: ${admins[existingAdminId]}`);
       return;
     }
 
-    // Logika zakresu
     if (!rangeStart || rangeStart.day !== day) {
-      // Pierwsze kliknięcie - ustaw start
       setRangeStart({ day, hourIndex });
       
-      // Od razu przełącz stan tej jednej godziny
       setAvailability(prev => {
         const dayData = { ...(prev[day] || {}) };
         if (dayData[hour] === currentAdmin.id) {
@@ -116,11 +111,9 @@ const AdminAvailability = () => {
         return { ...prev, [day]: dayData };
       });
     } else {
-      // Drugie kliknięcie w tym samym dniu - wypełnij zakres
       const start = Math.min(rangeStart.hourIndex, hourIndex);
       const end = Math.max(rangeStart.hourIndex, hourIndex);
       
-      // Sprawdzamy czy w zakresie nie ma godzin innych adminów
       const hasConflict = hours.slice(start, end + 1).some(h => {
         const id = availability[day]?.[h];
         return id && id !== currentAdmin.id;
@@ -132,8 +125,6 @@ const AdminAvailability = () => {
         return;
       }
 
-      // Określamy czy dodajemy czy usuwamy (na podstawie stanu pierwszej klikniętej godziny)
-      // Ale zazwyczaj w zakresie "od-do" użytkownik chce po prostu zaznaczyć dostępność
       setAvailability(prev => {
         const dayData = { ...(prev[day] || {}) };
         for (let i = start; i <= end; i++) {
@@ -202,6 +193,13 @@ const AdminAvailability = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+            {currentAdmin?.role === 'superadmin' && (
+              <Link to="/admin/users" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="w-full rounded-full px-4 h-11 gap-2 text-sm border-gray-accent text-gray-accent hover:bg-gray-accent/10">
+                  <Users size={16} /> Użytkownicy
+                </Button>
+              </Link>
+            )}
             <Link to="/admin/bookings" className="flex-1 sm:flex-none">
               <Button variant="outline" className="w-full rounded-full px-4 h-11 gap-2 text-sm"><ListChecks size={16} /> Rezerwacje</Button>
             </Link>
