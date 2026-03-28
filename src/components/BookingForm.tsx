@@ -52,7 +52,7 @@ const BookingForm = () => {
 
   const fetchAvailability = async () => {
     const weekStart = format(startOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const { data } = await supabase.from('weekly_availability').select('availability_data').eq('week_start_date', weekStart).single();
+    const { data } = await supabase.from('weekly_availability').select('availability_data').eq('week_start_date', weekStart).maybeSingle();
     if (data) {
       setDbAvailability(data.availability_data);
     } else {
@@ -89,7 +89,6 @@ const BookingForm = () => {
   };
 
   const isHourVisible = (date: Date, hour: string) => {
-    // Godzina jest widoczna jeśli ma przypisanego realizatora LUB jest już zarezerwowana
     const hasAdmin = !!getEngineerForSlot(date, hour);
     const isBooked = existingBookings.some(b => {
       const bDate = parseISO(b.booking_date);
