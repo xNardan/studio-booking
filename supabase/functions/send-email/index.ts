@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import nodemailer from "https://esm.sh/nodemailer@6.9.7";
+import { Resend } from "https://esm.sh/resend@1.1.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,100 +7,63 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log("[send-email] Start żądania");
-
+  // [send-email] Handle CORS preflight request
   if (req.method === 'OPTIONS') {
+    console.log("[send-email] Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
-    const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = body;
-    
-    const hostname = Deno.env.get("SMTP_HOSTNAME");
-    const user = Deno.env.get("SMTP_USER");
-    const password = Deno.env.get("SMTP_PASSWORD");
-    const portStr = Deno.env.get("SMTP_PORT") || "587";
-    const port = parseInt(portStr);
-
-    if (!hostname || !user || !password) {
-      throw new Error("Brak zmiennych środowiskowych SMTP w Supabase.");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("[send-email] RESEND_API_KEY is not set in environment variables.");
+      return new Response(JSON.stringify({ error: "Server configuration error: Missing API key." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log(`[send-email] Łączenie z: ${hostname}:${port} (Użytkownik: ${user})`);
+    const resend = new Resend(resendApiKey);
 
-    // Bardziej restrykcyjna, ale stabilna konfiguracja
-    const transporter = nodemailer.createTransport({
-      host: hostname,
-      port: port,
-      secure: port === 465, // true dla 465, false dla 587
-      auth: {
-        user: user,
-        pass: password,
-      },
-      tls: {
-        // Wymuszamy TLS 1.2+ i ignorujemy błędy certyfikatów (częste u polskich dostawców)
-        minVersion: 'TLSv1.2',
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 10000, // 10 sekund na połączenie
-      greetingTimeout: 10000,
-      socketTimeout: 10000
+    const { name, email, message } = await req.json();
+
+    if (!name || !email || !message) {
+      console.warn("[send-email] Missing required fields in request body.");
+      return new Response(JSON.stringify({ error: "Missing name, email, or message." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`[send-email] Attempting to send email from ${email} (${name})`);
+
+    const { data, error } = await resend.emails.send({
+      from: 'onboarding@resend.dev', // Zmień na zweryfikowany adres e-mail lub domenę Resend
+      to: 'flowstudiobp@gmail.com', // Adres docelowy
+      subject: `Nowa wiadomość z Flow Studio od ${name}`,
+      html: `
+        <p><strong>Imię:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Wiadomość:</strong></p>
+        <p>${message}</p>
+      `,
     });
 
-    // Test połączenia
-    console.log("[send-email] Weryfikacja połączenia z serwerem...");
-    try {
-      await transporter.verify();
-      console.log("[send-email] Połączenie SMTP zweryfikowane pomyślnie");
-    } catch (verifyError) {
-      console.error("[send-email] Błąd weryfikacji połączenia:", verifyError.message);
-      throw new Error(`Nie udało się połączyć z serwerem SMTP: ${verifyError.message}`);
+    if (error) {
+      console.error("[send-email] Error sending email:", error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const startHour = parseInt(bookingHour.split(':')[0]);
-    const endHour = startHour + parseInt(duration);
-    const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
-
-    const clientMail = {
-      from: `"Flow Studio" <${user}>`,
-      to: email,
-      subject: `Potwierdzenie rezerwacji - Flow Studio`,
-      html: `<div style="font-family: sans-serif; padding: 20px;">
-        <h2>Cześć ${name}!</h2>
-        <p>Twoja sesja została zarezerwowana na <strong>${bookingDate}</strong> o godzinie <strong>${timeRange}</strong>.</p>
-        <p>Realizator: ${engineerName}</p>
-        <p>Do zobaczenia!</p>
-      </div>`
-    };
-
-    const studioMail = {
-      from: `"System Rezerwacji" <${user}>`,
-      to: "flowstudiobp@gmail.com",
-      subject: `NOWA REZERWACJA: ${bookingDate} o ${bookingHour}`,
-      html: `<div style="font-family: sans-serif; padding: 20px;">
-        <h2>Nowa rezerwacja!</h2>
-        <p>Klient: ${name} (${email})</p>
-        <p>IG: ${instagram || 'Brak'}</p>
-        <p>Termin: ${bookingDate}, ${timeRange}</p>
-        <p>Realizator: ${engineerName}</p>
-      </div>`
-    };
-
-    console.log("[send-email] Wysyłanie wiadomości...");
-    await Promise.all([
-      transporter.sendMail(clientMail),
-      transporter.sendMail(studioMail)
-    ]);
-
-    console.log("[send-email] Sukces!");
-    return new Response(JSON.stringify({ message: "Sent" }), {
+    console.log("[send-email] Email sent successfully:", data);
+    return new Response(JSON.stringify({ message: "Email sent successfully!" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (error) {
-    console.error("[send-email] KRYTYCZNY BŁĄD:", error.message);
+    console.error("[send-email] Unexpected error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

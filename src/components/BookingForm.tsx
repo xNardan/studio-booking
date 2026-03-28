@@ -89,6 +89,7 @@ const BookingForm = () => {
   };
 
   const isHourVisible = (date: Date, hour: string) => {
+    // Godzina jest widoczna jeśli ma przypisanego realizatora LUB jest już zarezerwowana
     const hasAdmin = !!getEngineerForSlot(date, hour);
     const isBooked = existingBookings.some(b => {
       const bDate = parseISO(b.booking_date);
@@ -161,21 +162,27 @@ const BookingForm = () => {
 
       if (dbError) throw dbError;
 
-      // Wywołanie funkcji z pełnym adresem URL
-      await fetch('https://lusuraonlijbjnvxihzt.supabase.co/functions/v1/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const emailMessage = `
+        Zarezerwowano nową sesję nagraniową!
+        
+        SZCZEGÓŁY SESJI:
+        Data: ${format(selectedDate, 'dd.MM.yyyy')} (${dayMap[getDay(selectedDate)]})
+        Godzina: ${selectedHour}
+        Czas trwania: ${numberOfHours}h
+        Realizator: ${engineerName}
+        
+        DANE KLIENTA:
+        Imię/Pseudonim: ${formData.name}
+        Email: ${formData.email}
+        Instagram: ${formData.instagram || 'Nie podano'}
+      `;
+
+      await supabase.functions.invoke('send-email', {
+        body: {
           name: formData.name,
           email: formData.email,
-          instagram: formData.instagram,
-          bookingDate: format(selectedDate, 'dd.MM.yyyy'),
-          bookingHour: selectedHour,
-          duration: numberOfHours,
-          engineerName: engineerName
-        })
+          message: emailMessage
+        }
       });
 
       showSuccess("Zarezerwowano pomyślnie!");
