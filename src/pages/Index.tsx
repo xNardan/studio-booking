@@ -39,14 +39,12 @@ const Index = () => {
     }
 
     try {
-      // Używamy funkcji Edge Function 'send-email', która jest już skonfigurowana do wysyłki
       const { error } = await supabase.functions.invoke('send-email', {
         body: {
           name: contactForm.name,
           email: contactForm.email,
           message: contactForm.message,
-          // Dodajemy informację, że to wiadomość z formularza kontaktowego
-          bookingDetails: "Wiadomość z formularza kontaktowego na stronie"
+          isContactForm: true // Flaga informująca funkcję, że to tylko zapytanie
         }
       });
 
