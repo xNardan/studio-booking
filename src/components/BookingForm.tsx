@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, ArrowLeft, ArrowRight } from 'lucide-react';
+import { User, ArrowLeft, ArrowRight, CalendarOff } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ const BookingForm = () => {
   }, [selectedHour, selectedDate]);
 
   const fetchAdmins = async () => {
-    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'admin');
+    const { data } = await supabase.from('profiles').select('id, full_name').in('role', ['admin', 'superadmin']);
     if (data) {
       const map: Record<string, string> = {};
       data.forEach(a => map[a.id] = a.full_name || 'Realizator');
@@ -79,6 +79,7 @@ const BookingForm = () => {
 
     const collision = existingBookings.some(b => {
       const bDate = parseISO(b.booking_date);
+      if (format(bDate, 'yyyy-MM-dd') !== format(date, 'yyyy-MM-dd')) return false;
       const bStart = setHours(bDate, parseInt(b.booking_hour.split(':')[0]));
       const bEnd = addHours(bStart, b.number_of_hours);
       return (isBefore(bookingStart, bEnd) && isAfter(addHours(bookingStart, 1), bStart));
@@ -86,6 +87,29 @@ const BookingForm = () => {
 
     return !collision;
   };
+
+  const isHourVisible = (date: Date, hour: string) => {
+    // Godzina jest widoczna jeśli ma przypisanego realizatora LUB jest już zarezerwowana
+    const hasAdmin = !!getEngineerForSlot(date, hour);
+    const isBooked = existingBookings.some(b => {
+      const bDate = parseISO(b.booking_date);
+      if (format(bDate, 'yyyy-MM-dd') !== format(date, 'yyyy-MM-dd')) return false;
+      const bStart = setHours(bDate, parseInt(b.booking_hour.split(':')[0]));
+      const bEnd = addHours(bStart, b.number_of_hours);
+      const slotStart = setHours(date, parseInt(hour.split(':')[0]));
+      return (isBefore(slotStart, bEnd) && isAfter(addHours(slotStart, 1), bStart));
+    });
+    return hasAdmin || isBooked;
+  };
+
+  const visibleDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)).filter(date => {
+      const dayName = dayMap[getDay(date)];
+      const hasAnyAdmin = dbAvailability[dayName] && Object.values(dbAvailability[dayName]).some(val => !!val);
+      const hasAnyBooking = existingBookings.some(b => b.booking_date === format(date, 'yyyy-MM-dd'));
+      return hasAnyAdmin || hasAnyBooking;
+    });
+  }, [currentWeekStart, dbAvailability, existingBookings]);
 
   const maxAvailableHours = useMemo(() => {
     if (!selectedDate || !selectedHour) return 0;
@@ -153,16 +177,13 @@ const BookingForm = () => {
         Instagram: ${formData.instagram || 'Nie podano'}
       `;
 
-      // Użycie supabase.functions.invoke zamiast fetch
-      const { error: funcError } = await supabase.functions.invoke('send-email', {
+      await supabase.functions.invoke('send-email', {
         body: {
           name: formData.name,
           email: formData.email,
           message: emailMessage
         }
       });
-
-      if (funcError) console.error("Błąd funkcji e-mail:", funcError);
 
       showSuccess("Zarezerwowano pomyślnie!");
       setSelectedDate(null);
@@ -190,43 +211,53 @@ const BookingForm = () => {
               <Button variant="outline" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))} className="rounded-full"><ArrowRight /></Button>
             </div>
 
-            <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mb-8">
-              {Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)).map(date => (
-                <button
-                  key={date.toString()}
-                  onClick={() => { setSelectedDate(date); setSelectedHour(null); }}
-                  className={cn(
-                    "p-4 rounded-2xl border-2 transition-all flex flex-col items-center",
-                    selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') ? "border-gray-accent bg-gray-accent/5" : "border-transparent bg-secondary/30",
-                    isBefore(date, startOfToday()) && "opacity-20 grayscale cursor-not-allowed"
-                  )}
-                  disabled={isBefore(date, startOfToday())}
-                >
-                  <span className="text-[10px] font-bold uppercase opacity-50">{format(date, "EEE", { locale: pl })}</span>
-                  <span className="text-lg font-black">{format(date, "d")}</span>
-                </button>
-              ))}
-            </div>
+            {visibleDays.length > 0 ? (
+              <div className="grid grid-cols-4 md:grid-cols-7 gap-2 mb-8">
+                {visibleDays.map(date => (
+                  <button
+                    key={date.toString()}
+                    onClick={() => { setSelectedDate(date); setSelectedHour(null); }}
+                    className={cn(
+                      "p-4 rounded-2xl border-2 transition-all flex flex-col items-center",
+                      selectedDate && format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd') ? "border-gray-accent bg-gray-accent/5" : "border-transparent bg-secondary/30",
+                      isBefore(date, startOfToday()) && "opacity-20 grayscale cursor-not-allowed"
+                    )}
+                    disabled={isBefore(date, startOfToday())}
+                  >
+                    <span className="text-[10px] font-bold uppercase opacity-50">{format(date, "EEE", { locale: pl })}</span>
+                    <span className="text-lg font-black">{format(date, "d")}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <CalendarOff size={48} className="mb-4 opacity-20" />
+                <p className="font-medium">Brak dostępnych terminów w tym tygodniu.</p>
+              </div>
+            )}
 
             {selectedDate && (
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`).map(hour => {
-                  const available = isHourTrulyAvailable(selectedDate, hour);
-                  return (
-                    <button
-                      key={hour}
-                      disabled={!available}
-                      onClick={() => setSelectedHour(hour)}
-                      className={cn(
-                        "py-3 rounded-xl text-xs font-bold border-2 transition-all",
-                        selectedHour === hour ? "bg-gray-accent text-primary-foreground border-gray-accent" : "bg-background border-border",
-                        !available && "opacity-20 cursor-not-allowed"
-                      )}
-                    >
-                      {hour}
-                    </button>
-                  );
-                })}
+                {Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+                  .filter(hour => isHourVisible(selectedDate, hour))
+                  .map(hour => {
+                    const available = isHourTrulyAvailable(selectedDate, hour);
+                    return (
+                      <button
+                        key={hour}
+                        disabled={!available}
+                        onClick={() => setSelectedHour(hour)}
+                        className={cn(
+                          "py-3 rounded-xl text-xs font-bold border-2 transition-all",
+                          selectedHour === hour ? "bg-gray-accent text-primary-foreground border-gray-accent" : "bg-background border-border",
+                          !available && "opacity-20 cursor-not-allowed bg-secondary/10"
+                        )}
+                      >
+                        {hour}
+                        {!available && <span className="block text-[8px] opacity-50">ZAJĘTE</span>}
+                      </button>
+                    );
+                  })}
               </div>
             )}
           </div>
