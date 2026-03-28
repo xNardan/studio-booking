@@ -13,10 +13,12 @@ serve(async (req) => {
 
   try {
     const { name, email, message, bookingDetails } = await req.json();
+    console.log(`[send-email] Attempting to send email for ${name} (${email})`);
 
     const client = new SmtpClient();
     
-    // Używamy connect zamiast connectTLS dla portu 587 (STARTTLS)
+    // Próbujemy połączyć się bez TLS na początku, biblioteka powinna sama wynegocjować STARTTLS
+    // Jeśli to nadal zawiedzie, problemem jest sama biblioteka smtp w środowisku Supabase
     await client.connect({
       hostname: Deno.env.get("SMTP_HOSTNAME") || "",
       port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
@@ -24,7 +26,7 @@ serve(async (req) => {
       password: Deno.env.get("SMTP_PASSWORD") || "",
     });
 
-    console.log("[send-email] Connected to SMTP server via STARTTLS");
+    console.log("[send-email] Connected to SMTP server");
 
     // 1. Mail do studia
     await client.send({
@@ -50,8 +52,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[send-email] SMTP Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("[send-email] SMTP Error details:", error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      stack: error.stack 
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
