@@ -161,9 +161,13 @@ const BookingForm = () => {
 
       if (dbError) throw dbError;
 
-      // Wywołanie funkcji z pełnymi danymi do maila
-      await supabase.functions.invoke('send-email', {
-        body: {
+      // Wywołanie funkcji z pełnym adresem URL
+      await fetch('https://lusuraonlijbjnvxihzt.supabase.co/functions/v1/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           instagram: formData.instagram,
@@ -171,7 +175,7 @@ const BookingForm = () => {
           bookingHour: selectedHour,
           duration: numberOfHours,
           engineerName: engineerName
-        }
+        })
       });
 
       showSuccess("Zarezerwowano pomyślnie!");

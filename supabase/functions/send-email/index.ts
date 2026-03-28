@@ -7,28 +7,47 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("[send-email] Otrzymano żądanie wysyłki maila");
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = await req.json();
+    const body = await req.json();
+    const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = body;
+    
+    console.log("[send-email] Dane rezerwacji:", { name, email, bookingDate, bookingHour, duration });
 
-    // Konfiguracja SMTP z SeoHost (pobierana z sekretów Supabase)
     const client = new SmtpClient();
     const hostname = Deno.env.get("SMTP_HOSTNAME") || "";
     const user = Deno.env.get("SMTP_USER") || "";
     const password = Deno.env.get("SMTP_PASSWORD") || "";
-    const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
+    const portStr = Deno.env.get("SMTP_PORT") || "465";
+    const port = parseInt(portStr);
 
-    await client.connectTLS({
-      hostname,
-      port,
-      username: user,
-      password: password,
-    });
+    console.log(`[send-email] Próba połączenia z ${hostname}:${port} jako ${user}`);
 
-    // Obliczanie godziny zakończenia
+    // Wybór metody połączenia w zależności od portu
+    if (port === 465) {
+      await client.connectTLS({
+        hostname,
+        port,
+        username: user,
+        password: password,
+      });
+    } else {
+      // Dla portu 587 lub innych używamy standardowego connect (często wymaga STARTTLS)
+      await client.connect({
+        hostname,
+        port,
+        username: user,
+        password: password,
+      });
+    }
+
+    console.log("[send-email] Połączono z serwerem SMTP");
+
     const startHour = parseInt(bookingHour.split(':')[0]);
     const endHour = startHour + parseInt(duration);
     const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
@@ -55,7 +74,7 @@ serve(async (req) => {
       html: true,
     });
 
-    // 2. Mail dla STUDIA (flowstudiobp@gmail.com)
+    // 2. Mail dla STUDIA
     await client.send({
       from: user,
       to: "flowstudiobp@gmail.com",
@@ -73,6 +92,7 @@ serve(async (req) => {
       html: true,
     });
 
+    console.log("[send-email] Maile wysłane pomyślnie");
     await client.close();
 
     return new Response(JSON.stringify({ message: "Emails sent successfully" }), {
@@ -81,7 +101,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("[send-email] Error:", error);
+    console.error("[send-email] BŁĄD:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
