@@ -136,7 +136,7 @@ const BookingForm = () => {
     return count;
   }, [selectedDate, selectedHour, dbAvailability, existingBookings]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: ReactFormEvent) => {
     e.preventDefault();
     const adminId = selectedDate && selectedHour ? getEngineerForSlot(selectedDate, selectedHour) : null;
     const engineerName = adminId ? admins[adminId] : 'Realizator';
@@ -235,6 +235,14 @@ const BookingForm = () => {
                   .filter(hour => isHourVisible(selectedDate, hour))
                   .map(hour => {
                     const available = isHourTrulyAvailable(selectedDate, hour);
+                    const isBooked = existingBookings.some(b => {
+                      const bDate = parseISO(b.booking_date);
+                      if (format(bDate, 'yyyy-MM-dd') !== format(selectedDate, 'yyyy-MM-dd')) return false;
+                      const bStart = setHours(bDate, parseInt(b.booking_hour.split(':')[0]));
+                      const bEnd = addHours(bStart, b.number_of_hours);
+                      const slotStart = setHours(selectedDate, parseInt(hour.split(':')[0]));
+                      return (isBefore(slotStart, bEnd) && isAfter(addHours(slotStart, 1), bStart));
+                    });
                     return (
                       <button
                         key={hour}
@@ -243,11 +251,13 @@ const BookingForm = () => {
                         className={cn(
                           "py-3 rounded-xl text-xs font-bold border-2 transition-all",
                           selectedHour === hour ? "bg-gray-accent text-primary-foreground border-gray-accent" : "bg-background border-border",
-                          !available && "opacity-20 cursor-not-allowed bg-secondary/10"
+                          !available && "opacity-20 cursor-not-allowed bg-secondary/10",
+                          isBooked && "bg-destructive/20 text-destructive border-destructive/30"
                         )}
                       >
                         {hour}
                         {!available && <span className="block text-[8px] opacity-50">ZAJĘTE</span>}
+                        {isBooked && <span className="block text-[8px] opacity-50">ZAREZERWOWANE</span>}
                       </button>
                     );
                   })}
