@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,50 +12,59 @@ serve(async (req) => {
 
   try {
     const { name, email, message, bookingDetails } = await req.json();
-    console.log(`[send-email] Attempting to send email for ${name} (${email})`);
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-    const client = new SmtpClient();
-    
-    // Próbujemy połączyć się bez TLS na początku, biblioteka powinna sama wynegocjować STARTTLS
-    // Jeśli to nadal zawiedzie, problemem jest sama biblioteka smtp w środowisku Supabase
-    await client.connect({
-      hostname: Deno.env.get("SMTP_HOSTNAME") || "",
-      port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
-      username: Deno.env.get("SMTP_USER") || "",
-      password: Deno.env.get("SMTP_PASSWORD") || "",
-    });
+    if (!RESEND_API_KEY) {
+      throw new Error("Missing RESEND_API_KEY secret");
+    }
 
-    console.log("[send-email] Connected to SMTP server");
+    console.log(`[send-email] Sending emails via Resend for ${name}`);
 
     // 1. Mail do studia
-    await client.send({
-      from: Deno.env.get("SMTP_USER") || "",
-      to: "flowstudiobp@gmail.com",
-      subject: `Nowa rezerwacja: ${name}`,
-      content: `Otrzymano nową rezerwację od ${name} (${email}).\n\nSzczegóły:\n${message}`,
+    const resStudio = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Flow Studio <onboarding@resend.dev>", // Po weryfikacji domeny zmień na no-reply@flowstudiobp.pl
+        to: "flowstudiobp@gmail.com",
+        subject: `Nowa rezerwacja: ${name}`,
+        text: `Otrzymano nową rezerwację od ${name} (${email}).\n\nSzczegóły:\n${message}`,
+      }),
     });
 
     // 2. Potwierdzenie dla klienta
-    await client.send({
-      from: Deno.env.get("SMTP_USER") || "",
-      to: email,
-      subject: "Potwierdzenie rezerwacji - Flow Studio",
-      content: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!\nAl. Jana Pawła II 11, Biała Podlaska`,
+    const resClient = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Flow Studio <onboarding@resend.dev>",
+        to: email,
+        subject: "Potwierdzenie rezerwacji - Flow Studio",
+        text: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!\nAl. Jana Pawła II 11, Biała Podlaska`,
+      }),
     });
 
-    await client.close();
-    console.log("[send-email] Emails sent successfully");
+    if (!resStudio.ok || !resClient.ok) {
+      const err = await resStudio.text();
+      console.error("[send-email] Resend API Error:", err);
+      throw new Error("Failed to send one or more emails via Resend");
+    }
+
+    console.log("[send-email] Emails sent successfully via Resend");
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[send-email] SMTP Error details:", error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      stack: error.stack 
-    }), {
+    console.error("[send-email] Error:", error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
