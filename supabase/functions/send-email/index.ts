@@ -16,16 +16,17 @@ serve(async (req) => {
 
     const client = new SmtpClient();
     
-    await client.connectTLS({
+    // Używamy connect zamiast connectTLS dla portu 587 (STARTTLS)
+    await client.connect({
       hostname: Deno.env.get("SMTP_HOSTNAME") || "",
       port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
       username: Deno.env.get("SMTP_USER") || "",
       password: Deno.env.get("SMTP_PASSWORD") || "",
     });
 
-    console.log("[send-email] Connected to SMTP server");
+    console.log("[send-email] Connected to SMTP server via STARTTLS");
 
-    // 1. Mail do studia (wszystkie dane)
+    // 1. Mail do studia
     await client.send({
       from: Deno.env.get("SMTP_USER") || "",
       to: "flowstudiobp@gmail.com",
@@ -49,7 +50,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[send-email] Error:", error);
+    console.error("[send-email] SMTP Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
