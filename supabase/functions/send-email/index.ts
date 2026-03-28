@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@1.1.0";
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,63 +7,81 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // [send-email] Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    console.log("[send-email] Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      console.error("[send-email] RESEND_API_KEY is not set in environment variables.");
-      return new Response(JSON.stringify({ error: "Server configuration error: Missing API key." }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = await req.json();
 
-    const resend = new Resend(resendApiKey);
+    // Konfiguracja SMTP z SeoHost (pobierana z sekretów Supabase)
+    const client = new SmtpClient();
+    const hostname = Deno.env.get("SMTP_HOSTNAME") || "";
+    const user = Deno.env.get("SMTP_USER") || "";
+    const password = Deno.env.get("SMTP_PASSWORD") || "";
+    const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
 
-    const { name, email, message } = await req.json();
-
-    if (!name || !email || !message) {
-      console.warn("[send-email] Missing required fields in request body.");
-      return new Response(JSON.stringify({ error: "Missing name, email, or message." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log(`[send-email] Attempting to send email from ${email} (${name})`);
-
-    const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Zmień na zweryfikowany adres e-mail lub domenę Resend
-      to: 'flowstudiobp@gmail.com', // Adres docelowy
-      subject: `Nowa wiadomość z Flow Studio od ${name}`,
-      html: `
-        <p><strong>Imię:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Wiadomość:</strong></p>
-        <p>${message}</p>
-      `,
+    await client.connectTLS({
+      hostname,
+      port,
+      username: user,
+      password: password,
     });
 
-    if (error) {
-      console.error("[send-email] Error sending email:", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Obliczanie godziny zakończenia
+    const startHour = parseInt(bookingHour.split(':')[0]);
+    const endHour = startHour + parseInt(duration);
+    const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
 
-    console.log("[send-email] Email sent successfully:", data);
-    return new Response(JSON.stringify({ message: "Email sent successfully!" }), {
+    // 1. Mail dla KLIENTA
+    await client.send({
+      from: user,
+      to: email,
+      subject: `Potwierdzenie rezerwacji - Flow Studio`,
+      content: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #333;">Cześć ${name}!</h2>
+          <p>Twoja sesja w <strong>Flow Studio</strong> została zarezerwowana.</p>
+          <hr style="border: 0; border-top: 1px solid #eee;" />
+          <p><strong>Data:</strong> ${bookingDate}</p>
+          <p><strong>Godzina:</strong> ${timeRange} (${duration}h)</p>
+          <p><strong>Realizator:</strong> ${engineerName}</p>
+          <p><strong>Miejsce:</strong> Al. Jana Pawła II 11, Biała Podlaska</p>
+          <hr style="border: 0; border-top: 1px solid #eee;" />
+          <p style="font-size: 12px; color: #666;">Jeśli chcesz odwołać lub zmienić termin, skontaktuj się z nami na Instagramie @flowstudio.bp lub mailowo.</p>
+          <p>Do zobaczenia!</p>
+        </div>
+      `,
+      html: true,
+    });
+
+    // 2. Mail dla STUDIA (flowstudiobp@gmail.com)
+    await client.send({
+      from: user,
+      to: "flowstudiobp@gmail.com",
+      subject: `NOWA REZERWACJA: ${bookingDate} o ${bookingHour}`,
+      content: `
+        <div style="font-family: sans-serif; padding: 20px;">
+          <h2>Nowa rezerwacja w systemie!</h2>
+          <p><strong>Klient:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Instagram:</strong> ${instagram || 'Nie podano'}</p>
+          <p><strong>Termin:</strong> ${bookingDate}, ${timeRange} (${duration}h)</p>
+          <p><strong>Realizator:</strong> ${engineerName}</p>
+        </div>
+      `,
+      html: true,
+    });
+
+    await client.close();
+
+    return new Response(JSON.stringify({ message: "Emails sent successfully" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (error) {
-    console.error("[send-email] Unexpected error:", error);
+    console.error("[send-email] Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
