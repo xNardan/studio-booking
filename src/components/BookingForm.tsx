@@ -162,6 +162,7 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const adminId = selectedDate && selectedHour ? getEngineerForSlot(selectedDate, selectedHour) : null;
+    const engineerName = adminId ? admins[adminId] : 'Realizator';
     
     if (!selectedDate || !selectedHour || !adminId || !formData.name || !formData.email) {
       showError("Wypełnij wszystkie pola.");
@@ -182,6 +183,24 @@ const BookingForm = () => {
       });
 
       if (dbError) throw dbError;
+
+      const bookingDetails = `${format(selectedDate, 'dd.MM.yyyy')} o godzinie ${selectedHour} (${numberOfHours}h)`;
+      const fullMessage = `
+        Data: ${format(selectedDate, 'dd.MM.yyyy')}
+        Godzina: ${selectedHour}
+        Czas: ${numberOfHours}h
+        Realizator: ${engineerName}
+        Instagram: ${formData.instagram || 'Brak'}
+      `;
+
+      await supabase.functions.invoke('send-email', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          message: fullMessage,
+          bookingDetails: bookingDetails
+        }
+      });
 
       showSuccess("Zarezerwowano pomyślnie!");
       setSelectedDate(null);

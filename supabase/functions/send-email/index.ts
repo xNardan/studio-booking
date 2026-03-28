@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@1.1.0";
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,63 +7,49 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // [send-email] Handle CORS preflight request
   if (req.method === 'OPTIONS') {
-    console.log("[send-email] Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      console.error("[send-email] RESEND_API_KEY is not set in environment variables.");
-      return new Response(JSON.stringify({ error: "Server configuration error: Missing API key." }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { name, email, message, bookingDetails } = await req.json();
 
-    const resend = new Resend(resendApiKey);
-
-    const { name, email, message } = await req.json();
-
-    if (!name || !email || !message) {
-      console.warn("[send-email] Missing required fields in request body.");
-      return new Response(JSON.stringify({ error: "Missing name, email, or message." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log(`[send-email] Attempting to send email from ${email} (${name})`);
-
-    const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Zmień na zweryfikowany adres e-mail lub domenę Resend
-      to: 'flowstudiobp@gmail.com', // Adres docelowy
-      subject: `Nowa wiadomość z Flow Studio od ${name}`,
-      html: `
-        <p><strong>Imię:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Wiadomość:</strong></p>
-        <p>${message}</p>
-      `,
+    const client = new SmtpClient();
+    
+    await client.connectTLS({
+      hostname: Deno.env.get("SMTP_HOSTNAME") || "",
+      port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
+      username: Deno.env.get("SMTP_USER") || "",
+      password: Deno.env.get("SMTP_PASSWORD") || "",
     });
 
-    if (error) {
-      console.error("[send-email] Error sending email:", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    console.log("[send-email] Connected to SMTP server");
 
-    console.log("[send-email] Email sent successfully:", data);
-    return new Response(JSON.stringify({ message: "Email sent successfully!" }), {
+    // 1. Mail do studia (wszystkie dane)
+    await client.send({
+      from: Deno.env.get("SMTP_USER") || "",
+      to: "flowstudiobp@gmail.com",
+      subject: `Nowa rezerwacja: ${name}`,
+      content: `Otrzymano nową rezerwację od ${name} (${email}).\n\nSzczegóły:\n${message}`,
+    });
+
+    // 2. Potwierdzenie dla klienta
+    await client.send({
+      from: Deno.env.get("SMTP_USER") || "",
+      to: email,
+      subject: "Potwierdzenie rezerwacji - Flow Studio",
+      content: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!\nAl. Jana Pawła II 11, Biała Podlaska`,
+    });
+
+    await client.close();
+    console.log("[send-email] Emails sent successfully");
+
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[send-email] Unexpected error:", error);
+    console.error("[send-email] Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
