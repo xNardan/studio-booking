@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, ArrowLeft, ArrowRight, CalendarOff, Loader2 } from 'lucide-react';
+import { User, ArrowLeft, ArrowRight, CalendarOff, Loader2, Headphones } from 'lucide-react';
 import { format, addDays, startOfToday, getDay, parseISO, addHours, isBefore, isAfter, setHours, setMinutes, setSeconds, setMilliseconds, isToday, startOfWeek } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -259,27 +259,41 @@ const BookingForm = () => {
               )}
 
               {selectedDate && (
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
-                    .filter(hour => isHourVisible(selectedDate, hour))
-                    .map(hour => {
-                      const available = isHourTrulyAvailable(selectedDate, hour);
-                      return (
-                        <button
-                          key={hour}
-                          disabled={!available}
-                          onClick={() => setSelectedHour(hour)}
-                          className={cn(
-                            "py-3 rounded-xl text-xs font-bold border-2 transition-all",
-                            selectedHour === hour ? "bg-gray-accent text-primary-foreground border-gray-accent" : "bg-background border-border",
-                            !available && "opacity-20 cursor-not-allowed bg-secondary/10"
-                          )}
-                        >
-                          {hour}
-                          {!available && <span className="block text-[8px] opacity-50">ZAJĘTE</span>}
-                        </button>
-                      );
-                    })}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+                      .filter(hour => isHourVisible(selectedDate, hour))
+                      .map(hour => {
+                        const available = isHourTrulyAvailable(selectedDate, hour);
+                        return (
+                          <button
+                            key={hour}
+                            disabled={!available}
+                            onClick={() => setSelectedHour(hour)}
+                            className={cn(
+                              "py-3 rounded-xl text-xs font-bold border-2 transition-all",
+                              selectedHour === hour ? "bg-gray-accent text-primary-foreground border-gray-accent" : "bg-background border-border",
+                              !available && "opacity-20 cursor-not-allowed bg-secondary/10"
+                            )}
+                          >
+                            {hour}
+                            {!available && <span className="block text-[8px] opacity-50">ZAJĘTE</span>}
+                          </button>
+                        );
+                      })}
+                  </div>
+                  
+                  {selectedHour && selectedEngineerName && (
+                    <div className="flex items-center gap-3 p-4 bg-gray-accent/10 rounded-2xl border border-gray-accent/20 animate-in fade-in slide-in-from-top-2">
+                      <div className="w-10 h-10 bg-gray-accent rounded-full flex items-center justify-center text-primary-foreground">
+                        <Headphones size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-accent uppercase tracking-wider">Wybrany realizator</p>
+                        <p className="text-lg font-black">{selectedEngineerName}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -339,11 +353,6 @@ const BookingForm = () => {
                   </div>
                   
                   <div className="pt-4">
-                    {selectedEngineerName && (
-                      <p className="text-[10px] text-muted-foreground text-center mb-4 italic">
-                        * Sesja zostanie poprowadzona przez realizatora: <span className="font-bold text-foreground">{selectedEngineerName}</span>
-                      </p>
-                    )}
                     <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-bold text-lg bg-secondary hover:bg-secondary/80 text-foreground transition-all" disabled={submitting}>
                       {submitting ? "Przetwarzanie..." : "Potwierdź rezerwację"}
                     </Button>
