@@ -17,26 +17,32 @@ serve(async (req) => {
     const body = await req.json();
     const { name, email, bookingDate, bookingHour, duration, engineerName, instagram } = body;
     
-    const hostname = Deno.env.get("SMTP_HOSTNAME") || "";
-    const user = Deno.env.get("SMTP_USER") || "";
-    const password = Deno.env.get("SMTP_PASSWORD") || "";
+    const hostname = Deno.env.get("SMTP_HOSTNAME");
+    const user = Deno.env.get("SMTP_USER");
+    const password = Deno.env.get("SMTP_PASSWORD");
     const portStr = Deno.env.get("SMTP_PORT") || "587";
     const port = parseInt(portStr);
 
-    console.log(`[send-email] Konfiguracja transportera: ${hostname}:${port}`);
+    if (!hostname || !user || !password) {
+      console.error("[send-email] BRAK KONFIGURACJI SMTP! Sprawdź sekrety w Supabase.");
+      throw new Error("Brak konfiguracji serwera pocztowego.");
+    }
 
-    // Tworzymy transporter Nodemailer
+    console.log(`[send-email] Próba połączenia z ${hostname}:${port} jako ${user}`);
+
+    // Konfiguracja transportera
     const transporter = nodemailer.createTransport({
       host: hostname,
       port: port,
-      secure: port === 465, // true dla 465, false dla innych (np. 587 z STARTTLS)
+      secure: port === 465, // SSL dla 465, STARTTLS dla 587
       auth: {
         user: user,
         pass: password,
       },
       tls: {
-        // Niektóre serwery wymagają tego przy STARTTLS
-        rejectUnauthorized: false 
+        // Pomaga przy problemach z certyfikatami na niektórych serwerach
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
       }
     });
 
@@ -44,10 +50,8 @@ serve(async (req) => {
     const endHour = startHour + parseInt(duration);
     const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
 
-    console.log("[send-email] Wysyłanie maila do klienta...");
-
     // Mail dla KLIENTA
-    await transporter.sendMail({
+    const clientMailOptions = {
       from: `"Flow Studio" <${user}>`,
       to: email,
       subject: `Potwierdzenie rezerwacji - Flow Studio`,
@@ -65,12 +69,10 @@ serve(async (req) => {
           <p>Do zobaczenia!</p>
         </div>
       `,
-    });
-
-    console.log("[send-email] Wysyłanie maila do studia...");
+    };
 
     // Mail dla STUDIA
-    await transporter.sendMail({
+    const studioMailOptions = {
       from: `"System Rezerwacji" <${user}>`,
       to: "flowstudiobp@gmail.com",
       subject: `NOWA REZERWACJA: ${bookingDate} o ${bookingHour}`,
@@ -84,9 +86,17 @@ serve(async (req) => {
           <p><strong>Realizator:</strong> ${engineerName}</p>
         </div>
       `,
-    });
+    };
 
-    console.log("[send-email] Sukces: Maile wysłane poprawnie");
+    console.log("[send-email] Wysyłanie maili...");
+    
+    // Wysyłamy oba maile równolegle
+    await Promise.all([
+      transporter.sendMail(clientMailOptions),
+      transporter.sendMail(studioMailOptions)
+    ]);
+
+    console.log("[send-email] Sukces: Maile wysłane");
 
     return new Response(JSON.stringify({ message: "Sent" }), {
       status: 200,
@@ -94,7 +104,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("[send-email] BŁĄD:", error.message);
+    console.error("[send-email] KRYTYCZNY BŁĄD:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
