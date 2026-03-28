@@ -21,15 +21,14 @@ serve(async (req) => {
     const hostname = Deno.env.get("SMTP_HOSTNAME") || "";
     const user = Deno.env.get("SMTP_USER") || "";
     const password = Deno.env.get("SMTP_PASSWORD") || "";
-    const portStr = Deno.env.get("SMTP_PORT") || "465";
+    const portStr = Deno.env.get("SMTP_PORT") || "587";
     const port = parseInt(portStr);
 
     console.log(`[send-email] Próba połączenia z ${hostname}:${port} jako ${user}`);
 
-    // Próba połączenia z obsługą błędów szyfrowania
     try {
       if (port === 465) {
-        console.log("[send-email] Próba connectTLS (port 465)");
+        console.log("[send-email] Łączenie przez TLS (465)...");
         await client.connectTLS({
           hostname,
           port,
@@ -37,7 +36,7 @@ serve(async (req) => {
           password: password,
         });
       } else {
-        console.log(`[send-email] Próba connect (port ${port})`);
+        console.log(`[send-email] Łączenie przez STARTTLS/Standard (${port})...`);
         await client.connect({
           hostname,
           port,
@@ -45,26 +44,29 @@ serve(async (req) => {
           password: password,
         });
       }
-    } catch (connError) {
-      console.error("[send-email] Pierwsza próba połączenia nieudana:", connError.message);
-      
-      // Jeśli 465 zawiodło, spróbujmy zwykłego connect (niektóre serwery tak mają)
-      console.log("[send-email] Próba alternatywnej metody połączenia...");
-      await client.connect({
-        hostname,
-        port,
-        username: user,
-        password: password,
-      });
+    } catch (connErr) {
+      console.error("[send-email] Błąd połączenia głównego:", connErr.message);
+      // Ostatnia szansa: próba bez jawnego TLS (niektóre serwery same negocjują)
+      if (port === 465) {
+        console.log("[send-email] Próba awaryjna na 465 bez connectTLS...");
+        await client.connect({
+          hostname,
+          port,
+          username: user,
+          password: password,
+        });
+      } else {
+        throw connErr;
+      }
     }
 
-    console.log("[send-email] Połączono pomyślnie z serwerem SMTP");
+    console.log("[send-email] Autoryzacja i połączenie OK");
 
     const startHour = parseInt(bookingHour.split(':')[0]);
     const endHour = startHour + parseInt(duration);
     const timeRange = `${bookingHour} - ${String(endHour).padStart(2, '0')}:00`;
 
-    // 1. Mail dla KLIENTA
+    // Mail dla KLIENTA
     await client.send({
       from: user,
       to: email,
@@ -86,7 +88,7 @@ serve(async (req) => {
       html: true,
     });
 
-    // 2. Mail dla STUDIA
+    // Mail dla STUDIA
     await client.send({
       from: user,
       to: "flowstudiobp@gmail.com",
@@ -104,10 +106,10 @@ serve(async (req) => {
       html: true,
     });
 
-    console.log("[send-email] Maile wysłane pomyślnie");
+    console.log("[send-email] Sukces: Maile wysłane");
     await client.close();
 
-    return new Response(JSON.stringify({ message: "Emails sent successfully" }), {
+    return new Response(JSON.stringify({ message: "Sent" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
