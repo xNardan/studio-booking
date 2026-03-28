@@ -20,7 +20,7 @@ serve(async (req) => {
 
     console.log(`[send-email] Processing request for ${name} (${email})`);
 
-    // 1. Mail do studia
+    // 1. Mail do studia (powiadomienie o nowej rezerwacji)
     const resStudio = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -28,7 +28,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Flow Studio <onboarding@resend.dev>",
+        from: "Flow Studio <no-reply@flowstudiobp.pl>",
         to: "flowstudiobp@gmail.com",
         subject: `Nowa rezerwacja: ${name}`,
         text: `Otrzymano nową rezerwację od ${name} (${email}).\n\nSzczegóły:\n${message}`,
@@ -46,7 +46,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Flow Studio <onboarding@resend.dev>",
+        from: "Flow Studio <no-reply@flowstudiobp.pl>",
         to: email,
         subject: "Potwierdzenie rezerwacji - Flow Studio",
         text: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!\nAl. Jana Pawła II 11, Biała Podlaska`,
