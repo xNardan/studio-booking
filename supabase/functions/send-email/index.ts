@@ -28,7 +28,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Flow Studio <no-reply@flowstudiobp.pl>",
+        from: "Flow Studio <no-reply@mail.flowstudiobp.pl>",
         to: "flowstudiobp@gmail.com",
         subject: `Nowa rezerwacja: ${name}`,
         text: `Otrzymano nową rezerwację od ${name} (${email}).\n\nSzczegóły:\n${message}`,
@@ -46,7 +46,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Flow Studio <no-reply@flowstudiobp.pl>",
+        from: "Flow Studio <no-reply@mail.flowstudiobp.pl>",
         to: email,
         subject: "Potwierdzenie rezerwacji - Flow Studio",
         text: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!\nAl. Jana Pawła II 11, Biała Podlaska`,
