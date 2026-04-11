@@ -153,6 +153,7 @@ const Index = () => {
                 <CardContent>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
                     <li>KRK Rokit 5</li>
+                    <li>PreSonus Eris 5</li>
                     <li>Beyerdynamic DT 770 Pro 80 Ohm</li>
                     <li>Superlux HD-660 Pro 150 Ohm</li>
                     <li>Beyerdynamic DT 990 Pro 250 Ohm</li>
