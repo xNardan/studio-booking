@@ -13,6 +13,10 @@ const CookieConsent = () => {
     const consent = localStorage.getItem('cookie_consent');
     if (consent === 'accepted') {
       setHasAccepted(true);
+      setIsVisible(false);
+    } else if (consent === 'declined') {
+      setHasAccepted(false);
+      setIsVisible(false);
     } else {
       setIsVisible(true);
     }

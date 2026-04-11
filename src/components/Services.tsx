@@ -44,7 +44,7 @@ const Services = () => {
                 <CardDescription>{service.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="font-bold text-white">{service.price}</p>
+                <p className="font-bold text-foreground">{service.price}</p>
               </CardContent>
             </Card>
           ))}

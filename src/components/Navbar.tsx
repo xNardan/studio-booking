@@ -9,10 +9,14 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          aria-label="Przejdź do góry strony"
+        >
           <img src={logo} alt="Flow Studio Logo" className="w-8 h-8" /> {/* Użycie logo */}
           <span className="font-bold text-xl tracking-tight">Flow Studio</span>
-        </Link>
+        </button>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="/#services" className="hover:text-gray-accent transition-colors">Usługi</a>

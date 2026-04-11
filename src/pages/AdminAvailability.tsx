@@ -60,6 +60,9 @@ const AdminAvailability = () => {
     return startOfWeek(date, { weekStartsOn: 1 });
   };
 
+  const weekStartDate = selectedDate ? getWeekStartDate(selectedDate) : getWeekStartDate(new Date());
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
+
   const fetchAvailability = async (date: Date) => {
     setLoading(true);
     const weekStartDateFormatted = format(getWeekStartDate(date), 'yyyy-MM-dd');
@@ -215,6 +218,9 @@ const AdminAvailability = () => {
             <DatePicker date={selectedDate} setDate={setSelectedDate} className="w-full sm:w-[200px]" />
             <Button variant="outline" size="icon" onClick={() => setSelectedDate(addWeeks(selectedDate!, 1))} className="rounded-full h-10 w-10"><ArrowRight size={18} /></Button>
           </div>
+          <p className="text-sm font-medium text-muted-foreground">
+            Tydzień: {format(weekDates[0], "d MMMM yyyy", { locale: pl })} - {format(weekDates[6], "d MMMM yyyy", { locale: pl })}
+          </p>
           <p className="text-xs text-muted-foreground italic">
             {rangeStart 
               ? `Wybierz godzinę końcową dla dnia: ${rangeStart.day}` 
@@ -227,9 +233,10 @@ const AdminAvailability = () => {
             <table className="w-full border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-secondary/50">
-                  {days.map((day) => (
+                  {days.map((day, index) => (
                     <th key={day} className="p-4 text-center border-b border-border">
                       <div className="text-sm font-bold">{day}</div>
+                      <div className="text-xs text-muted-foreground">{format(weekDates[index], "d.MM", { locale: pl })}</div>
                       <div className="flex justify-center mt-2">
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-destructive/20 text-destructive" onClick={() => clearDay(day)} title="Wyczyść dzień">
                           <Trash2 size={12} />

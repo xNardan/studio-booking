@@ -25,7 +25,7 @@ const BookingForm = () => {
   const [dbAvailability, setDbAvailability] = useState<Record<string, Record<string, string>>>({});
   const [existingBookings, setExistingBookings] = useState<any[]>([]);
   const [admins, setAdmins] = useState<Record<string, string>>({});
-  const [currentWeekStart, setCurrentWeekStart] = useState(startOfToday());
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(startOfToday(), { weekStartsOn: 1 }));
   
   const [formData, setFormData] = useState({ name: '', email: '', instagram: '' });
 
@@ -62,6 +62,8 @@ const BookingForm = () => {
 
   const fetchAvailability = async () => {
     const weekStart = format(startOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    // currentWeekStart zawsze zaczyna się od poniedziałku w tym komponencie,
+    // więc pobieramy dokładnie ten tydzień pozwalając wyświetlać 30/31/1/2/3 w właściwej kolejności.
     const { data, error } = await supabase
       .from('weekly_availability')
       .select('availability_data')
@@ -162,8 +164,8 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const adminId = selectedDate && selectedHour ? getEngineerForSlot(selectedDate, selectedHour) : null;
-    const engineerName = adminId ? admins[adminId] : 'Realizator';
-    
+    const engineerName = adminId ? (admins[adminId] ?? 'Realizator') : 'Realizator';
+
     if (!selectedDate || !selectedHour || !adminId || !formData.name || !formData.email) {
       showError("Wypełnij wszystkie pola.");
       return;
@@ -184,7 +186,7 @@ const BookingForm = () => {
 
       if (dbError) throw dbError;
 
-      const bookingDetails = `${format(selectedDate, 'dd.MM.yyyy')} o godzinie ${selectedHour} (${numberOfHours}h)`;
+      const bookingDetails = `${format(selectedDate, 'dd.MM.yyyy')} o godzinie ${selectedHour} (${numberOfHours}h) | Realizator: ${engineerName}`;
       const fullMessage = `
         Data: ${format(selectedDate, 'dd.MM.yyyy')}
         Godzina: ${selectedHour}
@@ -198,7 +200,8 @@ const BookingForm = () => {
           name: formData.name,
           email: formData.email,
           message: fullMessage,
-          bookingDetails: bookingDetails
+          bookingDetails: bookingDetails,
+          engineerName: engineerName
         }
       });
 
@@ -214,7 +217,7 @@ const BookingForm = () => {
     }
   };
 
-  const selectedEngineerName = selectedDate && selectedHour ? admins[getEngineerForSlot(selectedDate, selectedHour) || ''] : null;
+  const selectedEngineerName = selectedDate && selectedHour ? (admins[getEngineerForSlot(selectedDate, selectedHour) || ''] ?? 'Realizator') : null;
 
   return (
     <section id="booking" className="py-24 bg-secondary/10">
@@ -228,9 +231,26 @@ const BookingForm = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-card border border-border rounded-[2.5rem] p-8 shadow-xl">
               <div className="flex justify-between items-center mb-8">
-                <Button variant="outline" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, -7))} disabled={isToday(currentWeekStart)} className="rounded-full"><ArrowLeft /></Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCurrentWeekStart(addDays(currentWeekStart, -7));
+                    setSelectedDate(null);
+                    setSelectedHour(null);
+                  }}
+                  disabled={isToday(currentWeekStart)}
+                  className="rounded-full"
+                ><ArrowLeft /></Button>
                 <span className="font-bold text-gray-accent">{format(currentWeekStart, 'dd.MM')} - {format(addDays(currentWeekStart, 6), 'dd.MM')}</span>
-                <Button variant="outline" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))} className="rounded-full"><ArrowRight /></Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCurrentWeekStart(addDays(currentWeekStart, 7));
+                    setSelectedDate(null);
+                    setSelectedHour(null);
+                  }}
+                  className="rounded-full"
+                ><ArrowRight /></Button>
               </div>
 
               {visibleDays.length > 0 ? (
