@@ -1,9 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ModeToggle } from './ModeToggle'; // Import ModeToggle
-import logo from '@/assets/flowstudiologo.png'; // Import logo
+import { ModeToggle } from './ModeToggle';
+import logo from '@/assets/flowstudiologo.png';
 
 const Navbar = () => {
   return (
@@ -14,18 +13,23 @@ const Navbar = () => {
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           aria-label="Przejdź do góry strony"
         >
-          <img src={logo} alt="Flow Studio Logo" className="w-8 h-8" /> {/* Użycie logo */}
+          <img src={logo} alt="Flow Studio Logo" className="w-8 h-8" />
           <span className="font-bold text-xl tracking-tight">Flow Studio</span>
         </button>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="/#services" className="hover:text-gray-accent transition-colors">Usługi</a>
-            <a href="/#about" className="hover:text-gray-accent transition-colors">O nas</a> {/* Zmieniona kolejność */}
-            <a href="/#equipment" className="hover:text-gray-accent transition-colors">Sprzęt</a> {/* Zmieniona kolejność */}
+            <a href="/#about" className="hover:text-gray-accent transition-colors">O nas</a>
+            <a href="/#equipment" className="hover:text-gray-accent transition-colors">Sprzęt</a>
             <a href="/#contact" className="hover:text-gray-accent transition-colors">Kontakt</a>
-            <Link to="/rezerwacja" className="bg-primary text-primary-foreground px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-bold">
+            <a 
+              href="https://instagram.com/flowstudio.bp" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-primary text-primary-foreground px-6 py-2 rounded-full hover:opacity-90 transition-opacity font-bold"
+            >
               Zarezerwuj
-            </Link>
+            </a>
           </div>
           <ModeToggle />
         </div>

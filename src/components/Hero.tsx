@@ -1,8 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import heroImage from '@/assets/hero.jpg'; // Importuj nowe zdjęcie hero
+import heroImage from '@/assets/hero.jpg';
 
 const Hero = () => {
   return (
@@ -14,7 +13,7 @@ const Hero = () => {
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 bg-black opacity-50 rounded-b-[3rem]"></div> {/* Overlay dla lepszej czytelności tekstu */}
+      <div className="absolute inset-0 bg-black opacity-50 rounded-b-[3rem]"></div>
       <div className="relative z-10 text-white p-4 max-w-3xl mx-auto">
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-4 leading-tight">
           Flow Studio
@@ -22,9 +21,14 @@ const Hero = () => {
         <p className="text-lg md:text-xl mb-8">
           Twoje brzmienie, nasza pasja.
         </p>
-        <Link to="/rezerwacja" className="bg-gray-accent text-primary-foreground px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform inline-flex items-center justify-center gap-2">
-          Zarezerwuj sesję
-        </Link>
+        <a 
+          href="https://instagram.com/flowstudio.bp" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="bg-gray-accent text-primary-foreground px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform inline-flex items-center justify-center gap-2"
+        >
+          Zarezerwuj sesję przez Instagram
+        </a>
       </div>
     </section>
   );
