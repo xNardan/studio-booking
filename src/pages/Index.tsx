@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
 import Process from '@/components/Process';
+import Gallery from '@/components/Gallery';
 import { Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,7 @@ const Index = () => {
       <main>
         <Hero />
         <Services />
+        <Gallery />
         <Process />
 
         {/* About Section */}
