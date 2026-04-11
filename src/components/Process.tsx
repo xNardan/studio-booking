@@ -6,28 +6,28 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const steps = [
   {
-    title: "1. Kontakt",
-    description: "Napisz do nas na Instagramie. Omówimy Twój pomysł i potrzeby.",
+    title: "1. Zbijamy pionę",
+    description: "Uderzaj do nas na DM. Gadamy o Twojej wizji, bitach i tym, co chcesz przekazać w numerze.",
     icon: MessageSquare,
   },
   {
-    title: "2. Rezerwacja",
-    description: "Wybieramy dogodny termin sesji. Potwierdzamy rezerwację i przygotowujemy studio.",
+    title: "2. Wpadaj do nas",
+    description: "Ustalamy termin, który Ci siedzi. Rezerwujemy studio tylko dla Ciebie i szykujemy sprzęt.",
     icon: CalendarCheck,
   },
   {
-    title: "3. Sesja nagraniowa",
-    description: "Przychodzisz do studia. Nagrywamy Twój materiał w profesjonalnej i luźnej atmosferze.",
+    title: "3. Lecimy z tematem",
+    description: "Wchodzisz do kabiny i dajesz z siebie wszystko. My dbamy o vibe i czyste ścieżki.",
     icon: Mic2,
   },
   {
-    title: "4. Miks i mastering",
-    description: "Dopracowujemy brzmienie i dbamy o detale, żeby Twój numer brzmiał po prostu mainstreamowo.",
+    title: "4. Szlifujemy diament",
+    description: "Kręcimy gałkami tak długo, aż Twój głos przebije się przez każdy głośnik i zrobi robotę.",
     icon: Sliders,
   },
   {
-    title: "5. Gotowy utwór",
-    description: "Otrzymujesz finalny plik gotowy do publikacji na Spotify, YouTube i innych platformach.",
+    title: "5. Puszczasz w świat",
+    description: "Dostajesz gotowy master. Teraz czas wrzucić to na streamingi i zbierać propsy.",
     icon: Music,
   }
 ];
