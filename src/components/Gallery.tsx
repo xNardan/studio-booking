@@ -31,8 +31,8 @@ const Gallery = () => {
           <p className="text-muted-foreground">Zobacz, gdzie powstaje Twoja muzyka.</p>
         </div>
         
-        <div className="max-w-5xl mx-auto relative group">
-          <div className="overflow-hidden rounded-[2rem] shadow-2xl aspect-video md:aspect-[21/9] relative">
+        <div className="max-w-4xl mx-auto relative group">
+          <div className="overflow-hidden rounded-[2rem] shadow-2xl aspect-square md:aspect-video relative bg-secondary/20">
             {images.map((src, index) => (
               <div
                 key={index}
@@ -44,7 +44,7 @@ const Gallery = () => {
                 <img 
                   src={src} 
                   alt={`Studio photo ${index + 1}`} 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                 />
               </div>
             ))}
