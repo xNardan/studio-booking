@@ -77,8 +77,15 @@ const Index = () => {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="rounded-3xl overflow-hidden shadow-xl">
-                <img src={hero2Image} alt="Studio Interior" className="w-full h-auto object-cover" />
+              <div className="rounded-3xl overflow-hidden shadow-xl bg-secondary">
+                <img 
+                  src={hero2Image} 
+                  alt="Wnętrze Flow Studio" 
+                  className="w-full h-auto object-cover" 
+                  loading="lazy"
+                  width="800"
+                  height="600"
+                />
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">

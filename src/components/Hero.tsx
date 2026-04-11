@@ -6,14 +6,17 @@ import heroImage from '@/assets/hero.jpg';
 const Hero = () => {
   return (
     <section 
-      className="relative h-[70vh] md:h-[80vh] flex items-center justify-center text-center overflow-hidden rounded-b-[3rem] shadow-2xl"
-      style={{
-        backgroundImage: `url(${heroImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+      className="relative h-[70vh] md:h-[80vh] flex items-center justify-center text-center overflow-hidden rounded-b-[3rem] shadow-2xl bg-black"
     >
-      <div className="absolute inset-0 bg-black opacity-50 rounded-b-[3rem]"></div>
+      {/* Używamy obrazu jako tła z optymalizacją CSS */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+        style={{
+          backgroundImage: `url(${heroImage})`,
+          backgroundPosition: 'center 25%', // Lepsze kadrowanie na twarz/sprzęt
+        }}
+      />
+      <div className="absolute inset-0 bg-black/50 rounded-b-[3rem]"></div>
       <div className="relative z-10 text-white p-4 max-w-3xl mx-auto">
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-4 leading-tight">
           Flow Studio
