@@ -22,7 +22,7 @@ const steps = [
   },
   {
     title: "4. Miks i mastering",
-    description: "Dopracowujemy brzmienie, dbając o każdy detal, aby Twój utwór brzmiał światowo.",
+    description: "Dopracowujemy brzmienie i dbamy o detale, żeby Twój numer po prostu dobrze siedział.",
     icon: Sliders,
   },
   {
