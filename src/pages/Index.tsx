@@ -30,13 +30,15 @@ const Index = () => {
 
   const handleSubmitContactForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoadingContact(true);
-
-    if (!contactForm.name || !contactForm.email || !contactForm.message) {
-      showError("Proszę wypełnić wszystkie pola formularza kontaktowego.");
-      setLoadingContact(false);
+    
+    // Podstawowa walidacja formatu email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contactForm.email)) {
+      showError("Proszę podać poprawny adres e-mail.");
       return;
     }
+
+    setLoadingContact(true);
 
     try {
       const { error } = await supabase.functions.invoke('send-email', {
@@ -198,6 +200,7 @@ const Index = () => {
                         value={contactForm.name}
                         onChange={handleContactInputChange}
                         disabled={loadingContact}
+                        required
                       />
                     </div>
                     <div>
@@ -210,6 +213,7 @@ const Index = () => {
                         value={contactForm.email}
                         onChange={handleContactInputChange}
                         disabled={loadingContact}
+                        required
                       />
                     </div>
                     <div>
@@ -222,6 +226,7 @@ const Index = () => {
                         value={contactForm.message}
                         onChange={handleContactInputChange}
                         disabled={loadingContact}
+                        required
                       />
                     </div>
                     <Button type="submit" className="w-full rounded-full font-bold h-12" disabled={loadingContact}>
