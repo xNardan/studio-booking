@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 const steps = [
   {
     title: "1. Kontakt",
-    description: "Napisz do nas na Instagramie lub przez formularz. Omówimy Twój pomysł i potrzeby.",
+    description: "Napisz do nas na Instagramie. Omówimy Twój pomysł i potrzeby.",
     icon: MessageSquare,
   },
   {

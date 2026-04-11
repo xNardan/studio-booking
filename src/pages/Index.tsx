@@ -1,67 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
 import Process from '@/components/Process';
 import { Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { showSuccess, showError } from '@/utils/toast';
 import { Link } from 'react-router-dom';
 import hero2Image from '@/assets/hero2.jpg';
-import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
-  const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
-  const [loadingContact, setLoadingContact] = useState(false);
-
-  const handleContactInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setContactForm(prev => ({ ...prev, [id.replace('contact-', '')]: value }));
-  };
-
-  const handleSubmitContactForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(contactForm.email)) {
-      showError("Proszę podać poprawny adres e-mail.");
-      return;
-    }
-
-    setLoadingContact(true);
-
-    try {
-      const { error } = await supabase.functions.invoke('send-email', {
-        body: {
-          name: contactForm.name,
-          email: contactForm.email,
-          message: contactForm.message,
-          isContactForm: true 
-        }
-      });
-
-      if (error) throw error;
-
-      showSuccess("Twoja wiadomość została wysłana!");
-      setContactForm({ name: '', email: '', message: '' });
-    } catch (error: any) {
-      console.error("Błąd wysyłania wiadomości:", error);
-      showError("Wystąpił błąd podczas wysyłania wiadomości. Spróbuj ponownie.");
-    } finally {
-      setLoadingContact(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-gray-accent/30">
       <Navbar />
@@ -185,71 +134,30 @@ const Index = () => {
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Skontaktuj się z nami</h2>
               <p className="text-muted-foreground text-lg">
-                Masz pytania? Chcesz omówić swój projekt? Napisz do nas!
+                Chcesz omówić swój projekt? Napisz do nas na Instagramie!
               </p>
             </div>
             <div className="max-w-2xl mx-auto">
-              <div className="space-y-6">
-                <Card className="border-none shadow-lg rounded-3xl p-6">
-                  <CardTitle className="mb-4 text-xl">Napisz do nas</CardTitle>
-                  <form onSubmit={handleSubmitContactForm} className="space-y-4">
-                    <div>
-                      <Label htmlFor="contact-name">Imię</Label>
-                      <Input 
-                        id="contact-name" 
-                        placeholder="Twoje imię" 
-                        className="rounded-xl h-12" 
-                        value={contactForm.name}
-                        onChange={handleContactInputChange}
-                        disabled={loadingContact}
-                        required
-                      />
+              <Card className="border-none shadow-lg rounded-3xl p-8 text-center">
+                <CardTitle className="mb-6 text-2xl">Nasze kanały</CardTitle>
+                <div className="flex flex-col items-center gap-8">
+                  <a 
+                    href="https://instagram.com/flowstudio.bp" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-4 text-xl font-bold hover:text-gray-accent transition-colors group"
+                  >
+                    <div className="w-12 h-12 bg-gray-accent text-primary-foreground rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Instagram size={28} />
                     </div>
-                    <div>
-                      <Label htmlFor="contact-email">Email</Label>
-                      <Input 
-                        id="contact-email" 
-                        type="email" 
-                        placeholder="twoj@email.com" 
-                        className="rounded-xl h-12" 
-                        value={contactForm.email}
-                        onChange={handleContactInputChange}
-                        disabled={loadingContact}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="contact-message">Wiadomość</Label>
-                      <Textarea 
-                        id="contact-message" 
-                        placeholder="Twoja wiadomość..." 
-                        rows={5} 
-                        className="rounded-xl" 
-                        value={contactForm.message}
-                        onChange={handleContactInputChange}
-                        disabled={loadingContact}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full rounded-full font-bold h-12" disabled={loadingContact}>
-                      {loadingContact ? "Wysyłanie..." : "Wyślij wiadomość"}
-                    </Button>
-                  </form>
-                </Card>
-                <Card className="border-none shadow-lg rounded-3xl p-6">
-                  <CardTitle className="mb-4 text-xl">Nasze kanały</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-6">
-                    <div className="flex items-center gap-4">
-                      <Mail className="text-gray-accent w-6 h-6" />
-                      <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-gray-accent transition-colors">flowstudiobp@gmail.com</a>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Instagram className="text-gray-accent w-6 h-6" />
-                      <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-gray-accent transition-colors">@flowstudio.bp</a>
-                    </div>
+                    @flowstudio.bp
+                  </a>
+                  <div className="flex items-center gap-4 text-lg text-muted-foreground">
+                    <Mail className="w-6 h-6" />
+                    <a href="mailto:flowstudiobp@gmail.com" className="hover:text-gray-accent transition-colors">flowstudiobp@gmail.com</a>
                   </div>
-                </Card>
-              </div>
+                </div>
+              </Card>
             </div>
           </div>
         </section>
