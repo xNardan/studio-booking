@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
-import { MapPin, Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
+import { Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,7 +44,7 @@ const Index = () => {
           name: contactForm.name,
           email: contactForm.email,
           message: contactForm.message,
-          isContactForm: true // Flaga informująca funkcję, że to tylko zapytanie
+          isContactForm: true 
         }
       });
 
@@ -174,10 +174,10 @@ const Index = () => {
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Skontaktuj się z nami</h2>
               <p className="text-muted-foreground text-lg">
-                Masz pytania? Chcesz omówić swój projekt? Napisz do nas lub zadzwoń!
+                Masz pytania? Chcesz omówić swój projekt? Napisz do nas!
               </p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="max-w-2xl mx-auto">
               <div className="space-y-6">
                 <Card className="border-none shadow-lg rounded-3xl p-6">
                   <CardTitle className="mb-4 text-xl">Napisz do nas</CardTitle>
@@ -223,63 +223,34 @@ const Index = () => {
                   </form>
                 </Card>
                 <Card className="border-none shadow-lg rounded-3xl p-6">
-                  <CardTitle className="mb-4 text-xl">Znajdź nas</CardTitle>
-                  <div className="flex items-center gap-4 mb-4">
-                    <Mail className="text-gray-accent w-6 h-6" />
-                    <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-gray-accent transition-colors">flowstudiobp@gmail.com</a>
-                  </div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <Instagram className="text-gray-accent w-6 h-6" />
-                    <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-gray-accent transition-colors">@flowstudio.bp</a>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <MapPin className="text-gray-accent w-6 h-6" />
-                    <p className="text-lg">Al. Jana Pawła II 11, Biała Podlaska</p>
+                  <CardTitle className="mb-4 text-xl">Nasze kanały</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    <div className="flex items-center gap-4">
+                      <Mail className="text-gray-accent w-6 h-6" />
+                      <a href="mailto:flowstudiobp@gmail.com" className="text-lg hover:text-gray-accent transition-colors">flowstudiobp@gmail.com</a>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Instagram className="text-gray-accent w-6 h-6" />
+                      <a href="https://instagram.com/flowstudio.bp" target="_blank" rel="noopener noreferrer" className="text-lg hover:text-gray-accent transition-colors">@flowstudio.bp</a>
+                    </div>
                   </div>
                 </Card>
-              </div>
-              <div className="rounded-3xl overflow-hidden shadow-xl h-[400px] lg:h-auto">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2440.9900000000003!2d23.1200000!3d52.0300000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4721920000000001%3A0x123456789abcdef0!2sAl.%20Jana%20Paw%C5%82a%20II%2011%2C%2021-500%20Bia%C5%82a%20Podlaska!5e0!3m2!1spl!2spl!4v1678901234567!5m2!1spl!2spl"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Lokalizacja Flow Studio"
-                ></iframe>
               </div>
             </div>
           </div>
         </section>
       </main>
       <footer className="bg-card text-foreground py-12 border-t border-border">
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-          <div className="text-left">
-            <h4 className="text-lg font-bold mb-4 text-muted-foreground">ADRES</h4>
-            <p className="text-base">Al. Jana Pawła II 11</p>
-            <p className="text-base">21-500 Biała Podlaska</p>
-          </div>
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <div className="text-left">
             <h4 className="text-lg font-bold mb-4 text-muted-foreground">KONTAKT</h4>
             <p className="text-base">@flowstudio.bp</p>
             <p className="text-base">flowstudiobp@gmail.com</p>
           </div>
           <div className="text-left md:text-right">
-            <a 
-              href="https://www.google.com/maps/search/Al.+Jana+Paw%C5%82a+II+11,+21-500+Bia%C5%82a+Podlaska" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-full hover:bg-secondary/80 transition-colors text-base w-full md:w-auto"
-            >
-              <MapPin size={20} /> Znajdź nas na Google
-            </a>
+            <p className="text-muted-foreground text-sm">© 2026 Flow Studio. Wszelkie prawa zastrzeżone.</p>
+            <Link to="/privacy-policy" className="text-muted-foreground text-sm hover:text-gray-accent transition-colors block mt-2">Polityka Prywatności</Link>
           </div>
-        </div>
-        <div className="container mx-auto px-4 text-center mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-muted-foreground text-sm">© 2026 Flow Studio. Wszelkie prawa zastrzeżone.</p>
-          <Link to="/privacy-policy" className="text-muted-foreground text-sm hover:text-gray-accent transition-colors">Polityka Prywatności</Link>
         </div>
       </footer>
     </div>

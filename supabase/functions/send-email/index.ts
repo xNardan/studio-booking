@@ -55,7 +55,7 @@ serve(async (req) => {
           from: "Flow Studio <no-reply@mail.flowstudiobp.pl>",
           to: email,
           subject: "Potwierdzenie rezerwacji - Flow Studio",
-          text: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!\nAl. Jana Pawła II 11, Biała Podlaska`,
+          text: `Cześć ${name}!\n\nDziękujemy za rezerwację w Flow Studio.\n\nTwoja sesja została zaplanowana na:\n${bookingDetails}\n\nDo zobaczenia w studio!`,
         }),
       });
       const clientData = await resClient.json();
