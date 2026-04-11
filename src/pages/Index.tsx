@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Services from '@/components/Services';
+import Process from '@/components/Process';
 import { Mail, Instagram, Mic, Headphones, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,6 @@ const Index = () => {
   const handleSubmitContactForm = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Podstawowa walidacja formatu email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(contactForm.email)) {
       showError("Proszę podać poprawny adres e-mail.");
@@ -68,6 +68,7 @@ const Index = () => {
       <main>
         <Hero />
         <Services />
+        <Process />
 
         {/* About Section */}
         <section id="about" className="py-20 bg-background">
