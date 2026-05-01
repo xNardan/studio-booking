@@ -9,7 +9,7 @@ const services = [
     title: "Nagrywanie wokalu",
     description: "Profesjonalne nagrywanie wokalu w studio z obecnością realizatora, który czuwa nad jakością nagrania i pomaga uzyskać najlepszy efekt.",
     icon: Mic,
-    price: "od 40 zł/h"
+    price: "od 50 zł/h"
   },
   {
     title: "Miks i Mastering",

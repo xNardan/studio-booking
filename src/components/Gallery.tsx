@@ -10,7 +10,14 @@ import img4 from '@/assets/gallery/img4.jpg';
 import img5 from '@/assets/gallery/img5.jpg';
 import img6 from '@/assets/gallery/img6.jpg';
 
-const images = [img1, img2, img3, img4, img5, img6];
+const images = [
+  { src: img1, alt: "Kabina nagraniowa Flow Studio Biała Podlaska" },
+  { src: img2, alt: "Sprzęt studyjny Flow Studio — interfejs audio i monitory" },
+  { src: img3, alt: "Mikrofon studyjny t.bone SC 600 w Flow Studio" },
+  { src: img4, alt: "Miejsce pracy realizatora dźwięku Flow Studio" },
+  { src: img5, alt: "Wnętrze studia nagrań Flow Studio Biała Podlaska" },
+  { src: img6, alt: "Sesja nagraniowa w Flow Studio" },
+];
 
 const Gallery = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,7 +40,7 @@ const Gallery = () => {
         
         <div className="max-w-4xl mx-auto relative group">
           <div className="overflow-hidden rounded-[2rem] shadow-2xl aspect-square md:aspect-video relative bg-secondary/20">
-            {images.map((src, index) => (
+            {images.map((image, index) => (
               <div
                 key={index}
                 className={cn(
@@ -41,9 +48,9 @@ const Gallery = () => {
                   index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
                 )}
               >
-                <img 
-                  src={src} 
-                  alt={`Studio photo ${index + 1}`} 
+                <img
+                  src={image.src}
+                  alt={image.alt}
                   className="w-full h-full object-cover object-center"
                 />
               </div>
